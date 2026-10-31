@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "kronicle-lite": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "kronicle-lite@0.2.0", "serve"]
+    }
+  }
+}

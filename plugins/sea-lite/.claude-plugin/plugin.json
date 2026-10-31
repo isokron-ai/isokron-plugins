@@ -1,0 +1,28 @@
+{
+  "name": "sea-lite",
+  "displayName": "Sea Lite",
+  "version": "0.1.0",
+  "description": "Fenced work queue for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history. Composes with kronicle-lite.",
+  "author": {
+    "name": "Joshua Bryan",
+    "url": "https://isokron.ai"
+  },
+  "homepage": "https://isokron.ai",
+  "repository": "https://github.com/rafe-walker/sea-lite",
+  "license": "Apache-2.0",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "work-queue",
+    "tickets",
+    "claim-fencing",
+    "lease",
+    "parallel-agents",
+    "hash-chain",
+    "sqlite",
+    "local-first"
+  ],
+  "documentationUrl": "https://github.com/rafe-walker/sea-lite#readme",
+  "supportUrl": "https://github.com/rafe-walker/sea-lite/issues",
+  "privacyPolicyUrl": "https://isokron.ai/privacy"
+}

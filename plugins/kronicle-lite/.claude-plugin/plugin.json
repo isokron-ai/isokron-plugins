@@ -1,0 +1,28 @@
+{
+  "name": "kronicle-lite",
+  "displayName": "Kronicle Lite",
+  "version": "0.2.0",
+  "description": "Hash-chained local document store with signed retrieval receipts and an orient protocol that tells the agent when its notes went stale.",
+  "author": {
+    "name": "Joshua Bryan",
+    "url": "https://isokron.ai"
+  },
+  "homepage": "https://isokron.ai",
+  "repository": "https://github.com/rafe-walker/kronicle-lite",
+  "license": "Apache-2.0",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "agent-memory",
+    "staleness",
+    "hash-chain",
+    "tamper-evident",
+    "receipts",
+    "ed25519",
+    "sqlite",
+    "local-first"
+  ],
+  "documentationUrl": "https://github.com/rafe-walker/kronicle-lite#readme",
+  "supportUrl": "https://github.com/rafe-walker/kronicle-lite/issues",
+  "privacyPolicyUrl": "https://isokron.ai/privacy"
+}

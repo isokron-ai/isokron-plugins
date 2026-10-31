@@ -1,0 +1,25 @@
+{
+  "name": "isokron-plugins",
+  "owner": {
+    "name": "Joshua Bryan",
+    "url": "https://isokron.ai"
+  },
+  "description": "IsoKron's local-first MCP servers for coding agents: kronicle-lite (hash-chained notes with staleness detection) and sea-lite (a fenced work queue for parallel agents).",
+  "version": "1.0.0",
+  "plugins": [
+    {
+      "name": "kronicle-lite",
+      "source": "./plugins/kronicle-lite",
+      "description": "Hash-chained local document store with signed retrieval receipts and an orient protocol that tells the agent when its notes went stale.",
+      "category": "agent-memory",
+      "tags": ["mcp", "memory", "staleness", "hash-chain", "receipts", "sqlite"]
+    },
+    {
+      "name": "sea-lite",
+      "source": "./plugins/sea-lite",
+      "description": "Fenced work queue for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history. Composes with kronicle-lite.",
+      "category": "workflow",
+      "tags": ["mcp", "work-queue", "tickets", "parallel-agents", "claim-fencing", "sqlite"]
+    }
+  ]
+}
