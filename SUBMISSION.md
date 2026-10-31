@@ -10,7 +10,7 @@ Two submissions, one per plugin folder. The directory refuses a marketplace root
 | GitHub account connected on claude.ai **in the organization you submit from**, with push access to the repo. A connection made in another Claude org does not carry over | You confirm (Settings > Connectors > GitHub) |
 | Repo `rafe-walker/isokron-plugins` on github.com. It may be private for Validate + submit (needs the Claude GitHub App installed on it and your consent to source upload), **must be public before Publish** | Push this repo; make public |
 | The first organization to submit a given repo+folder owns the listing forever. Submit from the org that should own IsoKron's listings long term | Decide once |
-| **Icon**: the listing icon is read only on the FIRST save/submit in the portal; adding it later does not change the listing. Add a square PNG, 512 to 2048 px, under 2 MB, at `plugins/<name>/.claude-plugin/icon.png` (or set `"icon": "./…"` in plugin.json) **before** the first save | Not done; no IsoKron icon asset in this repo |
+| **Icon**: the listing icon is read only on the FIRST save/submit in the portal; adding it later does not change the listing. Add a square PNG, 512 to 2048 px, under 2 MB, at `plugins/<name>/.claude-plugin/icon.png` (or set `"icon": "./…"` in plugin.json) **before** the first save | Done: `plugins/<name>/.claude-plugin/icon.png`, 1024 px, original marks |
 | 10 submissions per org per 24 h, drafts and withdrawals count | Two needed |
 | Comply with [Software Directory Terms](https://support.claude.com/en/articles/13145338-anthropic-software-directory-terms) and [Policy](https://support.claude.com/en/articles/13145358-anthropic-software-directory-policy) | Read once |
 
@@ -24,7 +24,7 @@ node scripts/check.mjs
 node scripts/sync-skills.mjs --check
 ```
 
-Only the `ICON_MISSING` warning remains. Re-run after any push: a validation result applies to one commit.
+All pass with zero warnings. Re-run after any push: a validation result applies to one commit.
 
 ## 1. Portal walkthrough (repeat for each plugin)
 
