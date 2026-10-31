@@ -48,7 +48,7 @@ Nothing to type. The portal reads these from `plugin.json` and `README.md`. What
 | --- | --- | --- |
 | Name | `kronicle-lite` | `sea-lite` |
 | Display name | Kronicle Lite | Sea Lite |
-| Version | 0.2.0 | 0.1.0 |
+| Version | 0.2.0 | 0.1.1 |
 | Short description | Hash-chained local document store with signed retrieval receipts and an orient protocol that tells the agent when its notes went stale. | Fenced work queue for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history. Composes with kronicle-lite. |
 | Author | Joshua Bryan, <https://isokron.ai> | same |
 | Homepage | <https://isokron.ai> | same |
@@ -125,52 +125,7 @@ Current state, from `src/server.ts` in each upstream repo at the pinned versions
 
 **kronicle-lite 0.2.0: complete.** All 9 tools set `title` and `openWorldHint: false`. Read-only (`readOnlyHint: true`): `get_system_state`, `audit_assumptions`, `recall`, `verify`, `verify_chain`. Writes with explicit `destructiveHint: false`: `checkpoint_chain`, `put_document`, `supersede_block`. Destructive (`destructiveHint: true`): `tombstone_block`. No change needed.
 
-**sea-lite 0.1.0: `destructiveHint` is never set.** All 12 tools have `title`, `readOnlyHint` and `openWorldHint: false`; the 3 readers (`sea_get`, `sea_list`, `sea_history`) are `readOnlyHint: true`. The 9 write tools omit `destructiveHint`, which the MCP spec defaults to **true**, so a spec-following client treats `sea_create`, `sea_next`, `sea_refresh` and friends as destructive and prompts on every call. That is safe but noisy for a tool (`sea_next`, `sea_refresh`) an agent calls constantly. The honest split, given that terminal statuses have no exit (`src/model/lifecycle.ts`), `sea_link` can remove links, and `sea_release` can force-release in operator role:
-
-| Tool | Proposed `destructiveHint` | Reason |
-| --- | --- | --- |
-| `sea_create`, `sea_apply` | `false` | Append-only; new rows and links |
-| `sea_claim`, `sea_refresh`, `sea_next` | `false` | Lease bookkeeping on a ticket you hold; reversible by `sea_release` or lapse |
-| `sea_update` | `true` | Overwrites title/body/priority fields (notes append, but fields do not) |
-| `sea_transition` | `true` | Terminal states (`resolved`, `wont_fix`, `duplicate`, `dropped`, `merged`) cannot be exited |
-| `sea_link` | `true` | `remove` deletes a link row |
-| `sea_release` | `true` | Operator role can drop another actor's claim |
-
-The patch for `rafe-walker/sea-lite` (not applied by this repo; it belongs upstream, then bump to 0.1.1 and re-pin here):
-
-```diff
---- a/src/server.ts
-+++ b/src/server.ts
-@@ sea_create
--      annotations: { readOnlyHint: false, idempotentHint: false, openWorldHint: false },
-+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-@@ sea_apply
--      annotations: { readOnlyHint: false, idempotentHint: false, openWorldHint: false },
-+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-@@ sea_update
--      annotations: { readOnlyHint: false, idempotentHint: false, openWorldHint: false },
-+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
-@@ sea_transition
--      annotations: { readOnlyHint: false, idempotentHint: false, openWorldHint: false },
-+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
-@@ sea_link
--      annotations: { readOnlyHint: false, idempotentHint: false, openWorldHint: false },
-+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
-@@ sea_claim
--      annotations: { readOnlyHint: false, idempotentHint: false, openWorldHint: false },
-+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-@@ sea_refresh
--      annotations: { readOnlyHint: false, idempotentHint: true, openWorldHint: false },
-+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
-@@ sea_release
--      annotations: { readOnlyHint: false, idempotentHint: false, openWorldHint: false },
-+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
-@@ sea_next
--      annotations: { readOnlyHint: false, idempotentHint: false, openWorldHint: false },
-+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-```
-
-Eight of the nine `-` lines are identical text (`src/server.ts` lines 88, 103, 118, 134, 149, 166, 193, 208 in 0.1.0; line 179 is the `idempotentHint: true` one), so apply by line number or tool name, not with `patch -p1`. After publishing 0.1.1, update `plugins/sea-lite/.mcp.json`, `plugin.json` `version`, and the `destructiveHint` sentence in `plugins/sea-lite/README.md`.
+**sea-lite 0.1.1: complete.** Shipped 2026-10-31 with explicit `destructiveHint` on every write tool: `false` for `sea_create`, `sea_apply`, `sea_claim`, `sea_refresh`, `sea_next`; `true` for `sea_update`, `sea_transition`, `sea_link`, `sea_release`. Readers unchanged (`readOnlyHint: true`). No change needed.
 
 ## 4. Things the docs ask for that this repo cannot satisfy yet
 

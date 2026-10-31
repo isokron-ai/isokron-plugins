@@ -5,7 +5,7 @@ Claude Code plugin marketplace for [IsoKron](https://isokron.ai)'s local-first M
 | Plugin | Server | What it does |
 | --- | --- | --- |
 | [`kronicle-lite`](plugins/kronicle-lite/) | [`kronicle-lite@0.2.0`](https://www.npmjs.com/package/kronicle-lite) | Hash-chained document store with signed retrieval receipts and an **orient** protocol that tells the agent when its notes went stale |
-| [`sea-lite`](plugins/sea-lite/) | [`sea-lite@0.1.0`](https://www.npmjs.com/package/sea-lite) | Fenced **work queue** for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history |
+| [`sea-lite`](plugins/sea-lite/) | [`sea-lite@0.1.1`](https://www.npmjs.com/package/sea-lite) | Fenced **work queue** for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history |
 
 Both servers run over stdio on the local machine, store everything in `~/.kronicle-lite`, and send nothing anywhere. They share one SQLite file, so an agent that has both can `orient` against the same chain its tickets live on.
 
@@ -44,7 +44,7 @@ plugins/kronicle-lite/
   README.md, LICENSE
 plugins/sea-lite/
   .claude-plugin/plugin.json
-  .mcp.json                         npx -y sea-lite@0.1.0 serve
+  .mcp.json                         npx -y sea-lite@0.1.1 serve
   skills/work-queue/SKILL.md        copy of upstream skills/work-queue/SKILL.md
   README.md, LICENSE
 scripts/check.mjs                   JSON + required-field checks (CI)
