@@ -1,0 +1,6 @@
+{
+  "name": "isokron-plugin-kronicle-lite",
+  "private": true,
+  "description": "Pins the kronicle-lite MCP server launched by .mcp.json; not published.",
+  "dependencies": { "kronicle-lite": "0.2.0" }
+}
