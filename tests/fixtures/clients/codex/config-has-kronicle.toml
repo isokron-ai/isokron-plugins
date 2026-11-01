@@ -1,0 +1,5 @@
+model = "gpt-5-codex"
+
+[mcp_servers."kronicle-lite"]
+command = "kronicle-lite"
+args = ["serve"]

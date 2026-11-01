@@ -1,6 +1,6 @@
 # Submitting to the Claude directory
 
-Two submissions, one per plugin folder. The directory refuses a marketplace root ("Pick one plugin first"), so each of `plugins/kronicle-lite` and `plugins/sea-lite` is its own entry in the portal. Source for every rule below: [Submit your plugin](https://claude.com/docs/plugins/submit), [Publish to the directory](https://claude.com/docs/directory/publish), [Plugin pre-submission checklist](https://claude.com/docs/plugins/pre-submission-checklist), [Connector pre-submission checklist](https://claude.com/docs/connectors/building/review-criteria), fetched 2026-10-31.
+Three submissions, one per plugin folder. The directory refuses a marketplace root ("Pick one plugin first"), so each of `plugins/kronicle-lite`, `plugins/sea-lite` and `plugins/isokron-setup` is its own entry in the portal. Submit `isokron-setup` last: its skill installs the other two from this marketplace, so a reviewer who tries it should find them listed (or at least submitted). Source for every rule below: [Submit your plugin](https://claude.com/docs/plugins/submit), [Publish to the directory](https://claude.com/docs/directory/publish), [Plugin pre-submission checklist](https://claude.com/docs/plugins/pre-submission-checklist), [Connector pre-submission checklist](https://claude.com/docs/connectors/building/review-criteria), fetched 2026-10-31.
 
 ## 0. Before you open the portal
 
@@ -11,7 +11,7 @@ Two submissions, one per plugin folder. The directory refuses a marketplace root
 | Repo `rafe-walker/isokron-plugins` on github.com. It may be private for Validate + submit (needs the Claude GitHub App installed on it and your consent to source upload), **must be public before Publish** | Push this repo; make public |
 | The first organization to submit a given repo+folder owns the listing forever. Submit from the org that should own IsoKron's listings long term | Decide once |
 | **Icon**: the listing icon is read only on the FIRST save/submit in the portal; adding it later does not change the listing. Add a square PNG, 512 to 2048 px, under 2 MB, at `plugins/<name>/.claude-plugin/icon.png` (or set `"icon": "./…"` in plugin.json) **before** the first save | Done: `plugins/<name>/.claude-plugin/icon.png`, 1024 px, original marks |
-| 10 submissions per org per 24 h, drafts and withdrawals count | Two needed |
+| 10 submissions per org per 24 h, drafts and withdrawals count | Three needed |
 | Comply with [Software Directory Terms](https://support.claude.com/en/articles/13145338-anthropic-software-directory-terms) and [Policy](https://support.claude.com/en/articles/13145358-anthropic-software-directory-policy) | Read once |
 
 Local checks already pass at the commit this file ships with:
@@ -20,6 +20,9 @@ Local checks already pass at the commit this file ships with:
 claude plugin validate .                                              # marketplace
 claude plugin validate --strict --profile directory ./plugins/kronicle-lite
 claude plugin validate --strict --profile directory ./plugins/sea-lite
+claude plugin validate --strict --profile directory ./plugins/isokron-setup
+node scripts/sync-setup-skill.mjs --check
+node --test tests/*.test.mjs
 node scripts/check.mjs
 node scripts/sync-skills.mjs --check
 ```
@@ -32,33 +35,33 @@ Open <https://claude.ai/directory/manage> and select **Submit new**. Under **Wha
 
 ### Source step
 
-| Field | kronicle-lite | sea-lite |
-| --- | --- | --- |
-| Repository | `rafe-walker/isokron-plugins` | `rafe-walker/isokron-plugins` |
-| Plugin path (optional) | `plugins/kronicle-lite` | `plugins/sea-lite` |
-| Branch or tag (optional) | leave empty (follows default branch `main`) | leave empty |
+| Field | kronicle-lite | sea-lite | isokron-setup |
+| --- | --- | --- | --- |
+| Repository | `rafe-walker/isokron-plugins` | `rafe-walker/isokron-plugins` | `rafe-walker/isokron-plugins` |
+| Plugin path (optional) | `plugins/kronicle-lite` | `plugins/sea-lite` | `plugins/isokron-setup` |
+| Branch or tag (optional) | leave empty (follows default branch `main`) | leave empty | leave empty |
 
-Select **Validate**. Expected report: no **Blocking** findings; one **Policy hold** titled **Runs a pinned npx or uvx package** (unavoidable for an npx launcher, see section 3); possibly a note about the icon. Fix anything marked Blocking in the repo, push, then **Re-validate**.
+Select **Validate**. Expected report for kronicle-lite and sea-lite: no **Blocking** findings; one **Policy hold** titled **Runs a pinned npx or uvx package** (unavoidable for an npx launcher, see section 3); possibly a note about the icon. For isokron-setup: no npx launcher (it has no `.mcp.json`), so no launcher hold; expect a reviewer look at the skill's scripts instead (section 3, isokron-setup row). Fix anything marked Blocking in the repo, push, then **Re-validate**.
 
 ### Listing details step
 
 Nothing to type. The portal reads these from `plugin.json` and `README.md`. What it will show:
 
-| Listing field | kronicle-lite | sea-lite |
-| --- | --- | --- |
-| Name | `kronicle-lite` | `sea-lite` |
-| Display name | Kronicle Lite | Sea Lite |
-| Version | 0.2.0 | 0.1.1 |
-| Short description | Hash-chained local document store with signed retrieval receipts and an orient protocol that tells the agent when its notes went stale. | Fenced work queue for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history. Composes with kronicle-lite. |
-| Author | Joshua Bryan, <https://isokron.ai> | same |
-| Homepage | <https://isokron.ai> | same |
-| Repository | <https://github.com/rafe-walker/kronicle-lite> | <https://github.com/rafe-walker/sea-lite> |
-| License | Apache-2.0 (plus `LICENSE` file in the folder) | same |
-| Documentation (`documentationUrl`) | <https://github.com/rafe-walker/kronicle-lite#readme> | <https://github.com/rafe-walker/sea-lite#readme> |
-| Support (`supportUrl`) | <https://github.com/rafe-walker/kronicle-lite/issues> | <https://github.com/rafe-walker/sea-lite/issues> |
-| Privacy policy (`privacyPolicyUrl`) | <https://isokron.ai/privacy> (returned HTTP 200 on 2026-10-31) | same |
-| Terms of service (`termsOfServiceUrl`) | not set (optional) | not set |
-| Long description | `plugins/<name>/README.md` | same |
+| Listing field | kronicle-lite | sea-lite | isokron-setup |
+| --- | --- | --- | --- |
+| Name | `kronicle-lite` | `sea-lite` | `isokron-setup` |
+| Display name | Kronicle Lite | Sea Lite | IsoKron Setup |
+| Version | 0.3.0 | 0.2.0 | 0.1.0 |
+| Short description | Hash-chained local document store with signed retrieval receipts and an orient protocol that tells the agent when its notes went stale. | Fenced work queue for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history. Composes with kronicle-lite. | One-command installer for the IsoKron agent toolset: detects Claude Code, Cowork, Cursor, Codex and Copilot, shows one plan, asks once, then installs kronicle-lite + orient, cc-anchor and (team) sea-lite, seeds the wake contract and the chain, runs the first orient and verifies. Fully reversible. |
+| Author | Joshua Bryan, <https://isokron.ai> | same | same |
+| Homepage | <https://isokron.ai> | same | same |
+| Repository | <https://github.com/rafe-walker/kronicle-lite> | <https://github.com/rafe-walker/sea-lite> | <https://github.com/rafe-walker/isokron-plugins> |
+| License | Apache-2.0 (plus `LICENSE` file in the folder) | same | same |
+| Documentation (`documentationUrl`) | <https://github.com/rafe-walker/kronicle-lite#readme> | <https://github.com/rafe-walker/sea-lite#readme> | <https://github.com/rafe-walker/isokron-plugins/tree/main/plugins/isokron-setup#readme> |
+| Support (`supportUrl`) | <https://github.com/rafe-walker/kronicle-lite/issues> | <https://github.com/rafe-walker/sea-lite/issues> | <https://github.com/rafe-walker/isokron-plugins/issues> |
+| Privacy policy (`privacyPolicyUrl`) | <https://isokron.ai/privacy> (returned HTTP 200 on 2026-10-31) | same | same |
+| Terms of service (`termsOfServiceUrl`) | not set (optional) | not set | not set |
+| Long description | `plugins/<name>/README.md` | same | same |
 
 To change any of these, edit `plugin.json` or the README, push, re-validate.
 
@@ -71,6 +74,16 @@ Suggested answers. Both servers are identical in behavior here.
 | Does the plugin read or store personal data? | **No** personal data by design. It stores whatever content the user writes into it, in a SQLite file on the user's own machine (`~/.kronicle-lite`). The publisher never receives it. | No network code in either server |
 | Does it send data to services other than its declared connectors? | **No.** The only outbound traffic is `npx` fetching the pinned package from the public npm registry on first launch. | Disclose the npm download explicitly; the scan flags undisclosed destinations |
 | How long is data kept? | Indefinitely on the user's machine, until the user deletes `~/.kronicle-lite`. The publisher retains nothing. | |
+| Intended for people under 18? | **No** | |
+
+**isokron-setup answers differently** (it is an installer, not a server):
+
+| Question | Answer | Why |
+| --- | --- | --- |
+| Does the plugin read or store personal data? | **No.** It reads the project's README, CLAUDE.md / AGENTS.md and chosen ADRs and stores them in the user's local kronicle-lite chain (`~/.kronicle-lite`). It writes `.isokron/setup-manifest.json` in the project. The publisher never receives anything. | Scripts use only Node's standard library; no network code of their own |
+| Does it send data to services other than its declared connectors? | **No.** Outbound traffic is only what the commands it runs do: `claude plugin marketplace add` / `install` (GitHub: `rafe-walker/isokron-plugins`, `rafe-walker/cc-anchor`), `npx` (npm registry: `kronicle-lite@0.3.0`, `sea-lite@0.2.0`, `mcp-catalog-snap@0.1.0`) and, for Cursor without Claude Code, `git clone` of `github.com/rafe-walker/cc-anchor` at `v0.2.0` into a temp dir. | All three destinations are named in the plugin README |
+| Does it change configuration outside the project? | **Only after the user answers the plan question**, and only the files that question names: `~/.claude/settings.json` via `claude plugin` (user scope), `~/.codex/config.toml` (marked block). Each is backed up as `*.bak-isokron`; `uninstall.mjs` reverses it. `--scope-mode project` keeps everything in the repo. | State it up front; this is the likeliest reviewer question |
+| How long is data kept? | Until the user runs `uninstall.mjs` (config) or deletes `~/.kronicle-lite` (seeded docs; the chain is append-only). | |
 | Intended for people under 18? | **No** | |
 
 ### Compliance step
@@ -99,7 +112,7 @@ From the plugin pre-submission checklist. **Blocks** = cannot submit; **Hold** =
 
 | Check | Result if failed | This repo |
 | --- | --- | --- |
-| Folder contains `.claude-plugin/plugin.json` | Blocks | Yes, both |
+| Folder contains `.claude-plugin/plugin.json` | Blocks | Yes, all three |
 | Submitting a marketplace root with several plugins | Blocks ("Pick one plugin first") | Submit each `plugins/<name>` folder |
 | README of 40+ words outside code blocks in the plugin folder | Blocks | Yes, both |
 | `LICENSE` file or `license` in plugin.json | Blocks | Both |
@@ -115,6 +128,7 @@ From the plugin pre-submission checklist. **Blocks** = cannot submit; **Hold** =
 | Skill front matter: valid YAML, `description` is a single string | Blocks | Both skills pass |
 | **Runs a pinned npx or uvx package** | **Hold, always** ("the package's own dependencies resolve at install time") | **Expected on both.** The only way to avoid it is to vendor the built server into the plugin folder, which would then hit the 256 KiB-per-file hold (`better-sqlite3` is native) and the "commit readable source, not compiled code" scan rule. Accept the hold |
 | Security scan: undisclosed network destinations, hidden code, permission changes | Rejects a first submission | README of each plugin states exactly what it runs, stores and sends |
+| isokron-setup: a skill that edits user config and installs other plugins | Not a listed Blocks item; expect a human reviewer to read `skills/isokron-setup/scripts/*.mjs` | Readable ES modules, `node:*` imports only, no minified or generated code, every write gated on `--yes` (and `--user-global-ok` for files outside the repo), every change reversible. 40 node:test cases in `tests/` cover detect / merge / idempotency / uninstall. The skill pre-approves no tools (no `allowed-tools`) |
 | Icon | Warning | Missing; add before the first portal save (see section 0) |
 
 ### Tool annotations

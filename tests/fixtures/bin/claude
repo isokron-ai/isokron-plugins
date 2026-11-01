@@ -1,0 +1,34 @@
+#!/usr/bin/env node
+// Fake `claude` CLI for tests: keeps marketplaces / plugins in $FAKE_CLAUDE_STATE
+// and logs every argv, so tests can assert the exact commands the installer ran.
+const fs = require('node:fs');
+const path = require('node:path');
+const file = process.env.FAKE_CLAUDE_STATE;
+const st = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : { marketplaces: [], plugins: [], calls: [] };
+const argv = process.argv.slice(2);
+st.calls.push(argv);
+const save = () => fs.writeFileSync(file, JSON.stringify(st, null, 2));
+const flag = (n, d) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : d; };
+const out = (o) => { process.stdout.write(JSON.stringify(o, null, 2) + '\n'); save(); process.exit(0); };
+const die = (m) => { process.stderr.write(m + '\n'); save(); process.exit(1); };
+const [a, b, c, d] = argv;
+if (a === '--version') { process.stdout.write('2.1.316 (Claude Code)\n'); save(); process.exit(0); }
+if (a !== 'plugin') die(`fake claude: unsupported ${argv.join(' ')}`);
+if (b === 'list') out(st.plugins);
+if (b === 'marketplace' && c === 'list') out(st.marketplaces);
+if (b === 'marketplace' && c === 'add') {
+  const name = path.basename(d).replace(/\.git$/, '');
+  if (st.marketplaces.some((m) => m.name === name)) die(`marketplace ${name} already added`);
+  st.marketplaces.push({ name, source: 'github', repo: d, scope: flag('--scope', 'user') });
+  save(); process.exit(0);
+}
+if (b === 'marketplace' && c === 'remove') { st.marketplaces = st.marketplaces.filter((m) => m.name !== d); save(); process.exit(0); }
+if (b === 'install') {
+  const [name, mk] = c.split('@');
+  if (!st.marketplaces.some((m) => m.name === mk)) die(`marketplace ${mk} not found`);
+  const installPath = name === 'cc-anchor' ? process.env.FAKE_CC_ANCHOR_DIR : path.join(path.dirname(file), 'cache', name);
+  st.plugins.push({ id: c, version: '9.9.9', scope: flag('--scope', 'user'), enabled: true, installPath });
+  save(); process.exit(0);
+}
+if (b === 'uninstall') { st.plugins = st.plugins.filter((p) => p.id !== c); save(); process.exit(0); }
+die(`fake claude: unsupported ${argv.join(' ')}`);

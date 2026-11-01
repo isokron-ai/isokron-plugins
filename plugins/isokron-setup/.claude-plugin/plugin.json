@@ -1,0 +1,29 @@
+{
+  "name": "isokron-setup",
+  "displayName": "IsoKron Setup",
+  "version": "0.1.0",
+  "description": "One-command installer for the IsoKron agent toolset: detects Claude Code, Cowork, Cursor, Codex and Copilot, shows one plan, asks once, then installs kronicle-lite + orient, cc-anchor and (team) sea-lite, seeds the wake contract and the chain, runs the first orient and verifies. Fully reversible.",
+  "author": {
+    "name": "Joshua Bryan",
+    "url": "https://isokron.ai"
+  },
+  "homepage": "https://isokron.ai",
+  "repository": "https://github.com/rafe-walker/isokron-plugins",
+  "license": "Apache-2.0",
+  "keywords": [
+    "installer",
+    "setup",
+    "onboarding",
+    "kronicle-lite",
+    "sea-lite",
+    "cc-anchor",
+    "orient",
+    "cursor",
+    "codex",
+    "copilot",
+    "agent-skills"
+  ],
+  "documentationUrl": "https://github.com/rafe-walker/isokron-plugins/tree/main/plugins/isokron-setup#readme",
+  "supportUrl": "https://github.com/rafe-walker/isokron-plugins/issues",
+  "privacyPolicyUrl": "https://isokron.ai/privacy"
+}

@@ -10,6 +10,7 @@
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -142,6 +143,50 @@ for (const e of entries) {
       if (!desc) warn(`${tag}: skills/${name}/SKILL.md front matter has no description`);
       else if (/^\s*[-\[]/.test(desc[1])) fail(`${tag}: skills/${name}/SKILL.md description must be a single text value`);
     }
+  }
+}
+
+// ---- standalone Agent Skills (skills/<name>/SKILL.md, agentskills.io spec) --
+// `npx skills add rafe-walker/isokron-plugins` discovers skills/ first. The
+// spec: name 1-64 chars [a-z0-9-], no leading/trailing/double hyphen, equal to
+// the folder name; description 1-1024 chars; compatibility <= 500 chars;
+// metadata a map of string -> string.
+const SPEC_NAME_RE = /^[a-z0-9](?:[a-z0-9]|-(?!-)){0,62}[a-z0-9]$|^[a-z0-9]$/;
+const standalone = join(root, 'skills');
+if (existsSync(standalone)) {
+  for (const name of readdirSync(standalone)) {
+    const sk = join(standalone, name, 'SKILL.md');
+    const tag = `skills/${name}`;
+    if (!existsSync(sk)) { fail(`${tag}: SKILL.md missing`); continue; }
+    const m = readFileSync(sk, 'utf8').match(/^---\n([\s\S]*?)\n---/);
+    if (!m) { fail(`${tag}: SKILL.md has no YAML front matter`); continue; }
+    const fm = m[1];
+    const scalar = (k) => { const mm = fm.match(new RegExp(`^${k}:\\s*(.*)$`, 'm')); return mm ? mm[1].trim().replace(/^(["'])(.*)\1$/, '$2') : null; };
+    const n = scalar('name');
+    if (!n || !SPEC_NAME_RE.test(n)) fail(`${tag}: name "${n}" violates the Agent Skills name rules`);
+    if (n !== name) fail(`${tag}: name "${n}" must equal the folder name`);
+    const desc = scalar('description');
+    if (!desc || desc.length > 1024) fail(`${tag}: description must be 1-1024 characters (got ${desc ? desc.length : 0})`);
+    const compat = scalar('compatibility');
+    if (compat !== null && (compat.length < 1 || compat.length > 500)) fail(`${tag}: compatibility must be 1-500 characters`);
+    const meta = fm.match(/^metadata:\s*\n((?:[ \t]+.*\n?)*)/m);
+    if (meta) for (const line of meta[1].split('\n').filter((l) => l.trim())) {
+      if (!/^\s+[A-Za-z0-9_.-]+:\s*("[^"]*"|'[^']*'|[^\s\[{].*)$/.test(line) || /:\s*(\d+(\.\d+)?|true|false)\s*$/.test(line)) fail(`${tag}: metadata values must be strings (quote "${line.trim()}")`);
+    }
+    for (const k of fm.split('\n').filter((l) => /^[A-Za-z]/.test(l)).map((l) => l.split(':')[0])) {
+      if (!['name', 'description', 'license', 'compatibility', 'metadata', 'allowed-tools'].includes(k)) warn(`${tag}: front matter key "${k}" is not in the Agent Skills spec`);
+    }
+    const lines = readFileSync(sk, 'utf8').split('\n').length;
+    if (lines > 500) warn(`${tag}: SKILL.md is ${lines} lines; the spec recommends < 500`);
+  }
+}
+
+// ---- bundled copies must not drift -------------------------------------------
+{
+  const sync = join(root, 'scripts', 'sync-setup-skill.mjs');
+  if (existsSync(sync)) {
+    const r = spawnSync(process.execPath, [sync, '--check'], { encoding: 'utf8' });
+    if (r.status !== 0) fail(`skill copies drifted (run node scripts/sync-setup-skill.mjs):\n${r.stdout.split('\n').filter((l) => l.startsWith('DRIFT')).join('\n')}`);
   }
 }
 

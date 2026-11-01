@@ -1,0 +1,6 @@
+{
+  "inputs": [{ "type": "promptString", "id": "token", "description": "API token", "password": true }],
+  "servers": {
+    "playwright": { "type": "stdio", "command": "npx", "args": ["-y", "@playwright/mcp@latest"] }
+  }
+}

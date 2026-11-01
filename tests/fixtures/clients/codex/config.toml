@@ -1,0 +1,12 @@
+model = "gpt-5-codex"
+approval_policy = "on-request"
+
+[profiles.fast]
+model = "gpt-5-mini"
+
+[mcp_servers.github]
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-github"]
+
+[mcp_servers.github.env]
+GITHUB_TOKEN = "x"

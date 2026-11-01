@@ -4,7 +4,7 @@
     "name": "Joshua Bryan",
     "url": "https://isokron.ai"
   },
-  "description": "IsoKron's local-first MCP servers for coding agents: kronicle-lite (hash-chained notes with staleness detection) and sea-lite (a fenced work queue for parallel agents).",
+  "description": "IsoKron's local-first MCP servers for coding agents: kronicle-lite (hash-chained notes with staleness detection), sea-lite (a fenced work queue for parallel agents) and isokron-setup (one-command installer for the whole toolset).",
   "version": "1.0.0",
   "plugins": [
     {
@@ -12,14 +12,43 @@
       "source": "./plugins/kronicle-lite",
       "description": "Hash-chained local document store with signed retrieval receipts and an orient protocol that tells the agent when its notes went stale.",
       "category": "agent-memory",
-      "tags": ["mcp", "memory", "staleness", "hash-chain", "receipts", "sqlite"]
+      "tags": [
+        "mcp",
+        "memory",
+        "staleness",
+        "hash-chain",
+        "receipts",
+        "sqlite"
+      ]
     },
     {
       "name": "sea-lite",
       "source": "./plugins/sea-lite",
       "description": "Fenced work queue for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history. Composes with kronicle-lite.",
       "category": "workflow",
-      "tags": ["mcp", "work-queue", "tickets", "parallel-agents", "claim-fencing", "sqlite"]
+      "tags": [
+        "mcp",
+        "work-queue",
+        "tickets",
+        "parallel-agents",
+        "claim-fencing",
+        "sqlite"
+      ]
+    },
+    {
+      "name": "isokron-setup",
+      "source": "./plugins/isokron-setup",
+      "description": "One-command installer for the IsoKron toolset: detects Claude Code, Cowork, Cursor, Codex and Copilot, shows one plan, asks once, installs, seeds the wake contract and the chain, runs the first orient, verifies. Reversible.",
+      "category": "productivity",
+      "tags": [
+        "installer",
+        "setup",
+        "onboarding",
+        "kronicle-lite",
+        "sea-lite",
+        "cc-anchor",
+        "agent-skills"
+      ]
     }
   ]
 }
