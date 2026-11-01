@@ -3,7 +3,7 @@
     "kronicle-lite": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "kronicle-lite@0.3.0", "serve"]
+      "args": ["-y", "kronicle-lite@0.4.0", "serve"]
     }
   }
 }

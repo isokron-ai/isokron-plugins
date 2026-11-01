@@ -1,6 +1,6 @@
 # What isokron-setup writes, per client
 
-Pinned versions: kronicle-lite 0.3.0, sea-lite 0.2.0, cc-anchor v0.2.0,
+Pinned versions: kronicle-lite 0.4.0, sea-lite 0.2.0, cc-anchor v0.2.0,
 mcp-catalog-snap 0.1.0. All MCP servers run over stdio on the local machine and
 share one store, `~/.kronicle-lite` (or `$KRONICLE_LITE_DATA_DIR`), so every
 client orients against the same chain. Sources: each tool's README.
@@ -15,7 +15,7 @@ claude plugin install cc-anchor@cc-anchor                 --scope user|project
 claude plugin install sea-lite@isokron-plugins            --scope user|project   # team
 ```
 
-The plugins bring the MCP servers (`npx -y kronicle-lite@0.3.0 serve`,
+The plugins bring the MCP servers (`npx -y kronicle-lite@0.4.0 serve`,
 `npx -y sea-lite@0.2.0 serve`), the `orient` and `work-queue` skills and the
 cc-anchor hooks. `project` scope writes `.claude/settings.json`, which
 teammates are prompted to accept.
@@ -42,7 +42,7 @@ Source: claude.com/docs/cowork/guide/plugins.
 ```json
 {
   "mcpServers": {
-    "kronicle-lite": { "command": "npx", "args": ["-y", "kronicle-lite@0.3.0", "serve", "--actor", "cursor"] },
+    "kronicle-lite": { "command": "npx", "args": ["-y", "kronicle-lite@0.4.0", "serve", "--actor", "cursor"] },
     "sea-lite": {
       "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.2.0", "serve"],
       "env": { "KRONICLE_LITE_DATA_DIR": "${userHome}/.kronicle-lite" }
@@ -69,7 +69,7 @@ Codex reads that only in a trusted project). Appended as marked blocks:
 # isokron:begin kronicle-lite (added by isokron-setup; its uninstall removes this block)
 [mcp_servers.kronicle-lite]
 command = "npx"
-args = ["-y", "kronicle-lite@0.3.0", "serve", "--actor", "codex"]
+args = ["-y", "kronicle-lite@0.4.0", "serve", "--actor", "codex"]
 # isokron:end kronicle-lite
 
 # isokron:begin sea-lite (…)
@@ -95,7 +95,7 @@ VS Code agent mode, `.vscode/mcp.json` (VS Code format, top-level `servers`):
 
 ```json
 { "servers": {
-  "kronicle-lite": { "type": "stdio", "command": "npx", "args": ["-y", "kronicle-lite@0.3.0", "serve", "--actor", "copilot"] },
+  "kronicle-lite": { "type": "stdio", "command": "npx", "args": ["-y", "kronicle-lite@0.4.0", "serve", "--actor", "copilot"] },
   "sea-lite":      { "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.2.0", "serve", "--actor", "copilot"] }
 } }
 ```
@@ -108,7 +108,7 @@ GitHub recommends):
 ```json
 { "mcpServers": {
   "kronicle-lite": { "type": "local", "command": "npx",
-    "args": ["-y", "kronicle-lite@0.3.0", "serve", "--data-dir", "./.kronicle-lite", "--actor", "copilot"],
+    "args": ["-y", "kronicle-lite@0.4.0", "serve", "--data-dir", "./.kronicle-lite", "--actor", "copilot"],
     "tools": ["get_system_state", "audit_assumptions", "recall", "verify", "verify_chain"] }
 } }
 ```

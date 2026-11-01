@@ -172,7 +172,7 @@ test('mergeTomlBlock appends marked tables, keeps every other table, and is idem
   assert.equal(lib.mergeTomlBlock(f, e.id, e.server, e.body).status, 'added');
   const after = read(f);
   assert.ok(after.startsWith(orig));
-  assert.match(after, /# isokron:begin kronicle-lite[^\n]*\n\[mcp_servers\.kronicle-lite\]\ncommand = "npx"\nargs = \["-y", "kronicle-lite@0\.3\.0", "serve", "--actor", "codex"\]\n# isokron:end kronicle-lite\n$/);
+  assert.match(after, /# isokron:begin kronicle-lite[^\n]*\n\[mcp_servers\.kronicle-lite\]\ncommand = "npx"\nargs = \["-y", "kronicle-lite@0\.4\.0", "serve", "--actor", "codex"\]\n# isokron:end kronicle-lite\n$/);
   assert.equal(lib.mergeTomlBlock(f, e.id, e.server, e.body).status, 'present');
   assert.equal(read(f), after);
 });
@@ -359,7 +359,7 @@ test('plan for Cowork is manual only, and per-client entries match the READMEs',
   assert.equal(p.actions.filter((a) => a.phase === 'install').length, 0);
   assert.match(p.manual[0].text, /Customize > Plugins > Add marketplace/);
   const cur = det.clientEntries('cursor', 'team');
-  assert.deepEqual(cur['kronicle-lite'].args, ['-y', 'kronicle-lite@0.3.0', 'serve', '--actor', 'cursor']);
+  assert.deepEqual(cur['kronicle-lite'].args, ['-y', 'kronicle-lite@0.4.0', 'serve', '--actor', 'cursor']);
   assert.ok(!cur['sea-lite'].args.includes('--actor'), 'Cursor sea-lite must share the scope-guard hook\'s default actor');
   assert.equal(cur['sea-lite'].env.KRONICLE_LITE_DATA_DIR, '${userHome}/.kronicle-lite');
   assert.equal(det.clientEntries('copilot', 'memory')['kronicle-lite'].type, 'stdio');
