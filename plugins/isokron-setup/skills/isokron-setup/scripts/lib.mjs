@@ -17,16 +17,16 @@ import path from 'node:path';
 
 export const SETUP_VERSION = '0.1.0';
 export const PINS = {
-  kronicle: '0.7.0',
-  sea: '0.5.0',
+  kronicle: '0.8.0',
+  sea: '0.6.0',
   // cc-anchor: `ccAnchorRef` is the branch or tag (Claude Code marketplace
   // `rafe-walker/cc-anchor#<ref>`, `git clone --branch <ref>`); `ccAnchorSha`,
   // when set, is the exact commit the clone must end on (marketplaces cannot
   // pin a commit, so the Claude Code path follows the ref). Kept set on a
   // tag too: if the tag is ever moved, the Cursor clone still ends on this
   // commit (fetched by id) or fails; it never installs another version.
-  ccAnchorRef: 'v0.4.0',
-  ccAnchorSha: 'b95500afd4a44eb1febe9bb2acf4d1dfcee53649',
+  ccAnchorRef: 'v0.5.0',
+  ccAnchorSha: 'dfc6259f5b5c7e1a6a4b8e6d8652462b683814a2',
   catalogSnap: '0.1.0',
 };
 export const SOURCES = {

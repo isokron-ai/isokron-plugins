@@ -33,6 +33,6 @@ Per client: Claude Code gets the plugins through `claude plugin marketplace add`
 
 ## What it runs and sends
 
-The skill's scripts use only Node's standard library and run locally. They call `claude`, `git`, `npx` (the pinned packages `kronicle-lite@0.7.0`, `sea-lite@0.5.0`, `mcp-catalog-snap@0.1.0` from the public npm registry) and, for Cursor without Claude Code, `git clone` of `github.com/rafe-walker/cc-anchor` at tag `v0.4.0` (commit `b95500a`, verified) into a temporary directory. Data stays in `~/.kronicle-lite` on your machine; nothing is sent to IsoKron.
+The skill's scripts use only Node's standard library and run locally. They call `claude`, `git`, `npx` (the pinned packages `kronicle-lite@0.8.0`, `sea-lite@0.6.0`, `mcp-catalog-snap@0.1.0` from the public npm registry) and, for Cursor without Claude Code, `git clone` of `github.com/rafe-walker/cc-anchor` at tag `v0.5.0` (commit `dfc6259`, verified) into a temporary directory. Data stays in `~/.kronicle-lite` on your machine; nothing is sent to IsoKron.
 
 Source: `skills/isokron-setup/` in [rafe-walker/isokron-plugins](https://github.com/rafe-walker/isokron-plugins). License: Apache-2.0.

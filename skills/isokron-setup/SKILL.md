@@ -79,13 +79,13 @@ node "${CLAUDE_SKILL_DIR}/scripts/install.mjs" --profile <p> [--clients a,b] [--
 What it does, per client (exact snippets in `references/clients.md`):
 
 - **Claude Code**: `claude plugin marketplace add rafe-walker/isokron-plugins`,
-  `… add rafe-walker/cc-anchor#v0.4.0`, `claude plugin install kronicle-lite@isokron-plugins`,
+  `… add rafe-walker/cc-anchor#v0.5.0`, `claude plugin install kronicle-lite@isokron-plugins`,
   `cc-anchor@cc-anchor` (+ `sea-lite@isokron-plugins` for team). Scope `user`
   for memory, `project` for team or `--scope-mode project`.
 - **Cowork**: cannot be scripted; print the click path from the plan.
 - **Cursor**: merges `.cursor/mcp.json`; runs cc-anchor `cursor install`
   (hooks port) from the plugin cache or a clone of the pinned cc-anchor commit
-  (tag `v0.4.0` @ b95500a) in a temp dir.
+  (tag `v0.5.0` @ dfc6259) in a temp dir.
 - **Codex**: appends marked `[mcp_servers.*]` tables to `~/.codex/config.toml`
   (or `.codex/config.toml` with `--scope-mode project`); never rewrites other tables.
 - **Copilot**: merges `.vscode/mcp.json` (`servers`); prints the coding-agent

@@ -172,7 +172,7 @@ test('mergeTomlBlock appends marked tables, keeps every other table, and is idem
   assert.equal(lib.mergeTomlBlock(f, e.id, e.server, e.body).status, 'added');
   const after = read(f);
   assert.ok(after.startsWith(orig));
-  assert.match(after, /# isokron:begin kronicle-lite[^\n]*\n\[mcp_servers\.kronicle-lite\]\ncommand = "npx"\nargs = \["-y", "kronicle-lite@0\.7\.0", "serve", "--actor", "codex"\]\n# isokron:end kronicle-lite\n$/);
+  assert.match(after, /# isokron:begin kronicle-lite[^\n]*\n\[mcp_servers\.kronicle-lite\]\ncommand = "npx"\nargs = \["-y", "kronicle-lite@0\.8\.0", "serve", "--actor", "codex"\]\n# isokron:end kronicle-lite\n$/);
   assert.equal(lib.mergeTomlBlock(f, e.id, e.server, e.body).status, 'present');
   assert.equal(read(f), after);
 });
@@ -314,7 +314,7 @@ test('plan(memory, claude-code) adds both marketplaces and the two plugins at us
   const cmds = p.actions.filter((a) => a.kind.startsWith('claude-')).map((a) => a.command);
   assert.deepEqual(cmds, [
     'claude plugin marketplace add rafe-walker/isokron-plugins --scope user',
-    "claude plugin marketplace add 'rafe-walker/cc-anchor#v0.4.0' --scope user",
+    "claude plugin marketplace add 'rafe-walker/cc-anchor#v0.5.0' --scope user",
     'claude plugin install kronicle-lite@isokron-plugins --scope user',
     'claude plugin install cc-anchor@cc-anchor --scope user',
   ]);
@@ -359,7 +359,7 @@ test('plan for Cowork is manual only, and per-client entries match the READMEs',
   assert.equal(p.actions.filter((a) => a.phase === 'install').length, 0);
   assert.match(p.manual[0].text, /Customize > Plugins > Add marketplace/);
   const cur = det.clientEntries('cursor', 'team');
-  assert.deepEqual(cur['kronicle-lite'].args, ['-y', 'kronicle-lite@0.7.0', 'serve', '--actor', 'cursor']);
+  assert.deepEqual(cur['kronicle-lite'].args, ['-y', 'kronicle-lite@0.8.0', 'serve', '--actor', 'cursor']);
   assert.ok(!cur['sea-lite'].args.includes('--actor'), 'Cursor sea-lite must share the scope-guard hook\'s default actor');
   assert.equal(cur['sea-lite'].env.KRONICLE_LITE_DATA_DIR, '${userHome}/.kronicle-lite');
   assert.equal(det.clientEntries('copilot', 'memory')['kronicle-lite'].type, 'stdio');
@@ -450,7 +450,7 @@ test('install runs the exact claude plugin commands, in order', () => {
   const calls = sb.claudeState().calls.filter((c) => ['add', 'install'].includes(c[1]) || c[2] === 'add').map((c) => c.join(' '));
   assert.deepEqual(calls, [
     'plugin marketplace add rafe-walker/isokron-plugins --scope project',
-    'plugin marketplace add rafe-walker/cc-anchor#v0.4.0 --scope project',
+    'plugin marketplace add rafe-walker/cc-anchor#v0.5.0 --scope project',
     'plugin install kronicle-lite@isokron-plugins --scope project',
     'plugin install cc-anchor@cc-anchor --scope project',
     'plugin install sea-lite@isokron-plugins --scope project',
