@@ -3,7 +3,7 @@
     "sea-lite": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "sea-lite@0.3.0", "serve"]
+      "args": ["-y", "sea-lite@0.4.0", "serve"]
     }
   }
 }

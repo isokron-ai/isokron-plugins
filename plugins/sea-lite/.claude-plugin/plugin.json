@@ -1,7 +1,7 @@
 {
   "name": "sea-lite",
   "displayName": "Sea Lite",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Fenced work queue for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history. Composes with kronicle-lite.",
   "author": {
     "name": "Joshua Bryan",
