@@ -1,6 +1,6 @@
 # What isokron-setup writes, per client
 
-Pinned versions: kronicle-lite 0.5.0, sea-lite 0.4.0, cc-anchor v0.2.0,
+Pinned versions: kronicle-lite 0.5.0, sea-lite 0.4.0, cc-anchor v0.3.0,
 mcp-catalog-snap 0.1.0. All MCP servers run over stdio on the local machine and
 share one store, `~/.kronicle-lite` (or `$KRONICLE_LITE_DATA_DIR`), so every
 client orients against the same chain. Sources: each tool's README.

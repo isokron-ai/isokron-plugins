@@ -84,7 +84,7 @@ What it does, per client (exact snippets in `references/clients.md`):
   for memory, `project` for team or `--scope-mode project`.
 - **Cowork**: cannot be scripted; print the click path from the plan.
 - **Cursor**: merges `.cursor/mcp.json`; runs cc-anchor `cursor install`
-  (hooks port) from the plugin cache or a pinned `v0.2.0` clone in a temp dir.
+  (hooks port) from the plugin cache or a pinned `v0.3.0` clone in a temp dir.
 - **Codex**: appends marked `[mcp_servers.*]` tables to `~/.codex/config.toml`
   (or `.codex/config.toml` with `--scope-mode project`); never rewrites other tables.
 - **Copilot**: merges `.vscode/mcp.json` (`servers`); prints the coding-agent
