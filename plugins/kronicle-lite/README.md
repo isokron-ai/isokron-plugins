@@ -10,7 +10,7 @@ It is one process, one file, no accounts. It is **not** a memory server; it sits
 
 | Component | What it is |
 | --- | --- |
-| MCP server `kronicle-lite` | `npx -y kronicle-lite@0.6.0 serve` over stdio, pinned to the published npm package |
+| MCP server `kronicle-lite` | `npx -y kronicle-lite@0.7.0 serve` over stdio, pinned to the published npm package |
 | Skill `orient` | The wake protocol: when to call `get_system_state`, how to read the drift banner and retractions, and the reconciliation discipline before any write |
 
 ### Tools exposed by the server
@@ -42,9 +42,9 @@ Type the bare word `orient` at the start of a session, after a compaction, or wh
 Store a document from a shell to see the chain in action:
 
 ```sh
-npx -y kronicle-lite@0.6.0 put runbook ./runbook.md --title "Runbook"
-npx -y kronicle-lite@0.6.0 orient --actor me
-npx -y kronicle-lite@0.6.0 verify-chain
+npx -y kronicle-lite@0.7.0 put runbook ./runbook.md --title "Runbook"
+npx -y kronicle-lite@0.7.0 orient --actor me
+npx -y kronicle-lite@0.7.0 verify-chain
 ```
 
 ## What it runs, stores and sends
@@ -64,7 +64,7 @@ The server inherits Claude Code's environment, so set these in your shell or set
 
 ## Skill source
 
-`skills/orient/SKILL.md` is a verbatim copy of [`skills/orient/SKILL.md` in rafe-walker/kronicle-lite](https://github.com/rafe-walker/kronicle-lite/blob/main/skills/orient/SKILL.md) at v0.6.0. The upstream repo is the source of truth; run `node scripts/sync-skills.mjs` from the marketplace root to refresh the copy after an upstream release, then bump `version` in `.claude-plugin/plugin.json` and the pin in `.mcp.json` together.
+`skills/orient/SKILL.md` is a verbatim copy of [`skills/orient/SKILL.md` in rafe-walker/kronicle-lite](https://github.com/rafe-walker/kronicle-lite/blob/main/skills/orient/SKILL.md) at v0.7.0. The upstream repo is the source of truth; run `node scripts/sync-skills.mjs` from the marketplace root to refresh the copy after an upstream release, then bump `version` in `.claude-plugin/plugin.json` and the pin in `.mcp.json` together.
 
 ## Links
 

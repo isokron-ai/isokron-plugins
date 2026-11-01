@@ -4,7 +4,7 @@ Claude Code plugin marketplace for [IsoKron](https://isokron.ai)'s local-first M
 
 | Plugin | Server | What it does |
 | --- | --- | --- |
-| [`kronicle-lite`](plugins/kronicle-lite/) | [`kronicle-lite@0.6.0`](https://www.npmjs.com/package/kronicle-lite) | Hash-chained document store with signed retrieval receipts and an **orient** protocol that tells the agent when its notes went stale |
+| [`kronicle-lite`](plugins/kronicle-lite/) | [`kronicle-lite@0.7.0`](https://www.npmjs.com/package/kronicle-lite) | Hash-chained document store with signed retrieval receipts and an **orient** protocol that tells the agent when its notes went stale |
 | [`sea-lite`](plugins/sea-lite/) | [`sea-lite@0.4.0`](https://www.npmjs.com/package/sea-lite) | Fenced **work queue** for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history |
 | [`isokron-setup`](plugins/isokron-setup/) | skill only (no server) | **One-command installer** for the whole toolset in Claude Code, Cursor, Codex, Copilot (and the click path for Cowork): plan, one question, install, seed, first orient, verify; fully reversible |
 
@@ -64,7 +64,7 @@ Requires Node >= 20, because each server is launched with `npx -y <package>@<ver
 .claude-plugin/marketplace.json     marketplace catalog (three entries)
 plugins/kronicle-lite/
   .claude-plugin/plugin.json        manifest + directory listing fields
-  .mcp.json                         npx -y kronicle-lite@0.6.0 serve
+  .mcp.json                         npx -y kronicle-lite@0.7.0 serve
   skills/orient/SKILL.md            copy of upstream skills/orient/SKILL.md
   README.md, LICENSE
 plugins/sea-lite/
