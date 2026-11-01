@@ -14,7 +14,7 @@ Run several agents against one backlog and the failure mode is not that they are
 
 | Component | What it is |
 | --- | --- |
-| MCP server `sea-lite` | `npx -y sea-lite@0.1.1 serve` over stdio, pinned to the published npm package |
+| MCP server `sea-lite` | `npx -y sea-lite@0.2.0 serve` over stdio, pinned to the published npm package |
 | Skill `work-queue` | How to take work without colliding: claim, work under the fence, hand off, re-orient after a compaction |
 
 ### Tools exposed by the server
@@ -43,9 +43,9 @@ Requires Node >= 20 on the machine, since the server runs through `npx`. Install
 Start a task that comes from the queue by calling `sea_next`; the `work-queue` skill explains what to do with the claim token, when to `sea_refresh`, and how to `sea_release` or `sea_transition` before stopping. Look at the queue from a shell:
 
 ```sh
-npx -y sea-lite@0.1.1 list
-npx -y sea-lite@0.1.1 show <ticket-id>
-npx -y sea-lite@0.1.1 verify
+npx -y sea-lite@0.2.0 list
+npx -y sea-lite@0.2.0 show <ticket-id>
+npx -y sea-lite@0.2.0 verify
 ```
 
 ## What it runs, stores and sends
@@ -67,7 +67,7 @@ The server inherits Claude Code's environment, so set these in your shell or set
 
 ## Skill source
 
-`skills/work-queue/SKILL.md` is a verbatim copy of [`skills/work-queue/SKILL.md` in rafe-walker/sea-lite](https://github.com/rafe-walker/sea-lite/blob/main/skills/work-queue/SKILL.md) at v0.1.1. The upstream repo is the source of truth; run `node scripts/sync-skills.mjs` from the marketplace root to refresh the copy after an upstream release, then bump `version` in `.claude-plugin/plugin.json` and the pin in `.mcp.json` together.
+`skills/work-queue/SKILL.md` is a verbatim copy of [`skills/work-queue/SKILL.md` in rafe-walker/sea-lite](https://github.com/rafe-walker/sea-lite/blob/main/skills/work-queue/SKILL.md) at v0.2.0. The upstream repo is the source of truth; run `node scripts/sync-skills.mjs` from the marketplace root to refresh the copy after an upstream release, then bump `version` in `.claude-plugin/plugin.json` and the pin in `.mcp.json` together.
 
 ## Links
 

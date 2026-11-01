@@ -1,7 +1,7 @@
 {
   "name": "kronicle-lite",
   "displayName": "Kronicle Lite",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Hash-chained local document store with signed retrieval receipts and an orient protocol that tells the agent when its notes went stale.",
   "author": {
     "name": "Joshua Bryan",
