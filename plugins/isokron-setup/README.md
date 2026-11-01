@@ -19,7 +19,7 @@ npx skills add rafe-walker/isokron-plugins --skill isokron-setup
 
 | Profile | Tools |
 | --- | --- |
-| `memory` (default) | kronicle-lite MCP server + `orient` skill, cc-anchor (anchor card that survives compaction) |
+| `memory` (default) | kronicle-lite MCP server + `orient` skill, cc-anchor (anchor card that survives compaction; kronicle-lite retraction push after each tool call and a pulse before deploy/migrate/publish/git push) |
 | `team` | memory + sea-lite work queue + `work-queue` skill + cc-anchor claim guard (Stop) and scope guard (Edit/Write) |
 | `ci` | team + mcp-catalog-snap baseline of your MCP server's `tools/list` and a GitHub Action that fails on drift (only for repos that ship an MCP server) |
 
@@ -33,6 +33,6 @@ Per client: Claude Code gets the plugins through `claude plugin marketplace add`
 
 ## What it runs and sends
 
-The skill's scripts use only Node's standard library and run locally. They call `claude`, `git`, `npx` (the pinned packages `kronicle-lite@0.7.0`, `sea-lite@0.4.0`, `mcp-catalog-snap@0.1.0` from the public npm registry) and, for Cursor without Claude Code, `git clone` of `github.com/rafe-walker/cc-anchor` at tag `v0.2.0` into a temporary directory. Data stays in `~/.kronicle-lite` on your machine; nothing is sent to IsoKron.
+The skill's scripts use only Node's standard library and run locally. They call `claude`, `git`, `npx` (the pinned packages `kronicle-lite@0.7.0`, `sea-lite@0.5.0`, `mcp-catalog-snap@0.1.0` from the public npm registry) and, for Cursor without Claude Code, `git clone` of `github.com/rafe-walker/cc-anchor` at tag `v0.4.0` (commit `b95500a`, verified) into a temporary directory. Data stays in `~/.kronicle-lite` on your machine; nothing is sent to IsoKron.
 
 Source: `skills/isokron-setup/` in [rafe-walker/isokron-plugins](https://github.com/rafe-walker/isokron-plugins). License: Apache-2.0.

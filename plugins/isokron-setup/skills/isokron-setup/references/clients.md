@@ -1,6 +1,7 @@
 # What isokron-setup writes, per client
 
-Pinned versions: kronicle-lite 0.7.0, sea-lite 0.4.0, cc-anchor v0.3.0,
+Pinned versions: kronicle-lite 0.7.0, sea-lite 0.5.0, cc-anchor v0.4.0
+(commit b95500a),
 mcp-catalog-snap 0.1.0. All MCP servers run over stdio on the local machine and
 share one store, `~/.kronicle-lite` (or `$KRONICLE_LITE_DATA_DIR`), so every
 client orients against the same chain. Sources: each tool's README.
@@ -9,16 +10,28 @@ client orients against the same chain. Sources: each tool's README.
 
 ```sh
 claude plugin marketplace add rafe-walker/isokron-plugins --scope user|project
-claude plugin marketplace add rafe-walker/cc-anchor       --scope user|project
+claude plugin marketplace add rafe-walker/cc-anchor#v0.4.0 --scope user|project
 claude plugin install kronicle-lite@isokron-plugins       --scope user|project
 claude plugin install cc-anchor@cc-anchor                 --scope user|project
 claude plugin install sea-lite@isokron-plugins            --scope user|project   # team
 ```
 
 The plugins bring the MCP servers (`npx -y kronicle-lite@0.7.0 serve`,
-`npx -y sea-lite@0.4.0 serve`), the `orient` and `work-queue` skills and the
+`npx -y sea-lite@0.5.0 serve`), the `orient` and `work-queue` skills and the
 cc-anchor hooks. `project` scope writes `.claude/settings.json`, which
 teammates are prompted to accept.
+
+cc-anchor's hooks include the kronicle-lite **retraction push** (after every
+tool call, retractions that landed since the session's cursor are injected
+into the context: what the agent relied on, what it says now, the diff) and
+the **pulse** (before `deploy|migrate|publish|release|git push|terraform
+apply|kubectl apply`, an unreconciled retraction denies the command; chained
+`build && deploy` calls are split). Both switch on by themselves because the
+kronicle-lite plugin is enabled; nothing to configure. The hooks run the
+kronicle-lite CLI that `npx -y kronicle-lite@0.7.0 serve` leaves in the npx
+cache. Tune or switch off in `.claude/cc-anchor.json` (`push`, `pulse`,
+`pulse_mode: warn`, `pulse_chain: check`, `pulse_match`). The sea-lite lease
+heartbeat is on by default once the session holds claims.
 
 team: `.claude/cc-anchor.json` gets `{"claim_guard": true, "scope_guard": true}`
 (Stop blocked once while a sea-lite claim is live; Edit/Write inside another
@@ -32,7 +45,7 @@ Optional, not done by the installer because it edits `~/.claude/settings.json`:
 
 Not scriptable. Customize > Plugins > **Add marketplace** >
 `rafe-walker/isokron-plugins` > select **kronicle-lite** > **Install** (and
-**sea-lite** for team). Repeat **Add marketplace** with `rafe-walker/cc-anchor`.
+**sea-lite** for team). Repeat **Add marketplace** with `rafe-walker/cc-anchor#v0.4.0`.
 Source: claude.com/docs/cowork/guide/plugins.
 
 ## Cursor
@@ -44,7 +57,7 @@ Source: claude.com/docs/cowork/guide/plugins.
   "mcpServers": {
     "kronicle-lite": { "command": "npx", "args": ["-y", "kronicle-lite@0.7.0", "serve", "--actor", "cursor"] },
     "sea-lite": {
-      "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.4.0", "serve"],
+      "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.5.0", "serve"],
       "env": { "KRONICLE_LITE_DATA_DIR": "${userHome}/.kronicle-lite" }
     }
   }
@@ -75,7 +88,7 @@ args = ["-y", "kronicle-lite@0.7.0", "serve", "--actor", "codex"]
 # isokron:begin sea-lite (…)
 [mcp_servers.sea_lite]
 command = "npx"
-args = ["-y", "sea-lite@0.4.0", "serve", "--actor", "codex"]
+args = ["-y", "sea-lite@0.5.0", "serve", "--actor", "codex"]
 env_vars = ["KRONICLE_LITE_DATA_DIR"]
 startup_timeout_sec = 20
 default_tools_approval_mode = "writes"
@@ -96,7 +109,7 @@ VS Code agent mode, `.vscode/mcp.json` (VS Code format, top-level `servers`):
 ```json
 { "servers": {
   "kronicle-lite": { "type": "stdio", "command": "npx", "args": ["-y", "kronicle-lite@0.7.0", "serve", "--actor", "copilot"] },
-  "sea-lite":      { "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.4.0", "serve", "--actor", "copilot"] }
+  "sea-lite":      { "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.5.0", "serve", "--actor", "copilot"] }
 } }
 ```
 

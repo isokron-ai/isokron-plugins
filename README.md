@@ -5,7 +5,7 @@ Claude Code plugin marketplace for [IsoKron](https://isokron.ai)'s local-first M
 | Plugin | Server | What it does |
 | --- | --- | --- |
 | [`kronicle-lite`](plugins/kronicle-lite/) | [`kronicle-lite@0.7.0`](https://www.npmjs.com/package/kronicle-lite) | Hash-chained document store with signed retrieval receipts and an **orient** protocol that tells the agent when its notes went stale |
-| [`sea-lite`](plugins/sea-lite/) | [`sea-lite@0.4.0`](https://www.npmjs.com/package/sea-lite) | Fenced **work queue** for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history |
+| [`sea-lite`](plugins/sea-lite/) | [`sea-lite@0.5.0`](https://www.npmjs.com/package/sea-lite) | Fenced **work queue** for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history |
 | [`isokron-setup`](plugins/isokron-setup/) | skill only (no server) | **One-command installer** for the whole toolset in Claude Code, Cursor, Codex, Copilot (and the click path for Cowork): plan, one question, install, seed, first orient, verify; fully reversible |
 
 Both servers run over stdio on the local machine, store everything in `~/.kronicle-lite`, and send nothing anywhere. They share one SQLite file, so an agent that has both can `orient` against the same chain its tickets live on.
@@ -28,7 +28,7 @@ The skill detects your client(s) (Claude Code, Cowork, Cursor, Codex, GitHub Cop
 
 | Profile | Installs |
 | --- | --- |
-| `memory` (default) | kronicle-lite + `orient`, cc-anchor (anchor card that survives compaction) |
+| `memory` (default) | kronicle-lite + `orient`, cc-anchor (anchor card that survives compaction; kronicle-lite retraction push after each tool call and a pulse before deploy/migrate/publish/git push) |
 | `team` | memory + sea-lite + `work-queue`, cc-anchor claim guard (Stop) and scope guard (Edit/Write) |
 | `ci` | team + an mcp-catalog-snap baseline and GitHub Action, for repos that ship an MCP server |
 
@@ -69,7 +69,7 @@ plugins/kronicle-lite/
   README.md, LICENSE
 plugins/sea-lite/
   .claude-plugin/plugin.json
-  .mcp.json                         npx -y sea-lite@0.4.0 serve
+  .mcp.json                         npx -y sea-lite@0.5.0 serve
   skills/work-queue/SKILL.md        copy of upstream skills/work-queue/SKILL.md
   README.md, LICENSE
 plugins/isokron-setup/

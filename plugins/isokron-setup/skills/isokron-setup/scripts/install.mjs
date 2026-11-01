@@ -152,8 +152,19 @@ export function applyPlan(p, { env = process.env, log = () => {}, claudeBin } = 
           if (!script) {
             tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'isokron-cc-anchor-'));
             const src = env.ISOKRON_CC_ANCHOR_GIT || SOURCES.ccAnchorGit;
-            const r = run('git', ['clone', '--quiet', '--depth', '1', '--branch', PINS.ccAnchorTag, src, path.join(tmp, 'cc-anchor')], { env, timeout: 120000 });
-            if (r.code !== 0) { fs.rmSync(tmp, { recursive: true, force: true }); done(a, 'failed', `git clone ${src}@${PINS.ccAnchorTag}: ${r.stderr.trim()}`); break; }
+            const dest = path.join(tmp, 'cc-anchor');
+            const r = run('git', ['clone', '--quiet', '--depth', '1', '--branch', PINS.ccAnchorRef, src, dest], { env, timeout: 120000 });
+            if (r.code !== 0) { fs.rmSync(tmp, { recursive: true, force: true }); done(a, 'failed', `git clone ${src}@${PINS.ccAnchorRef}: ${r.stderr.trim()}`); break; }
+            if (PINS.ccAnchorSha) {
+              // A branch moves: end on the pinned commit (fetch it by id if the branch has moved on).
+              let head = run('git', ['-C', dest, 'rev-parse', 'HEAD'], { env }).stdout.trim();
+              if (head !== PINS.ccAnchorSha) {
+                const f = run('git', ['-C', dest, 'fetch', '--quiet', '--depth', '1', 'origin', PINS.ccAnchorSha], { env, timeout: 120000 });
+                if (f.code === 0) run('git', ['-C', dest, 'checkout', '--quiet', 'FETCH_HEAD'], { env });
+                head = run('git', ['-C', dest, 'rev-parse', 'HEAD'], { env }).stdout.trim();
+              }
+              if (head !== PINS.ccAnchorSha) { fs.rmSync(tmp, { recursive: true, force: true }); done(a, 'failed', `cc-anchor ${PINS.ccAnchorRef}: pinned commit ${PINS.ccAnchorSha.slice(0, 12)} not reachable (got ${head.slice(0, 12) || 'nothing'})`); break; }
+            }
             script = path.join(tmp, 'cc-anchor', 'scripts', 'anchor.mjs');
           }
           const hadFile = exists(hooksFile);
