@@ -28,7 +28,7 @@ The skill detects your client(s) (Claude Code, Cowork, Cursor, Codex, GitHub Cop
 
 | Profile | Installs |
 | --- | --- |
-| `memory` (default) | kronicle-lite + `orient`, cc-anchor (anchor card that survives compaction) |
+| `memory` (default) | kronicle-lite + `orient`, cc-anchor (anchor card that survives compaction; kronicle-lite retraction push after each tool call and a pulse before deploy/migrate/publish/git push) |
 | `team` | memory + sea-lite + `work-queue`, cc-anchor claim guard (Stop) and scope guard (Edit/Write) |
 | `ci` | team + an mcp-catalog-snap baseline and GitHub Action, for repos that ship an MCP server |
 

@@ -314,7 +314,7 @@ test('plan(memory, claude-code) adds both marketplaces and the two plugins at us
   const cmds = p.actions.filter((a) => a.kind.startsWith('claude-')).map((a) => a.command);
   assert.deepEqual(cmds, [
     'claude plugin marketplace add rafe-walker/isokron-plugins --scope user',
-    'claude plugin marketplace add rafe-walker/cc-anchor --scope user',
+    "claude plugin marketplace add 'rafe-walker/cc-anchor#push-hook' --scope user",
     'claude plugin install kronicle-lite@isokron-plugins --scope user',
     'claude plugin install cc-anchor@cc-anchor --scope user',
   ]);
@@ -450,7 +450,7 @@ test('install runs the exact claude plugin commands, in order', () => {
   const calls = sb.claudeState().calls.filter((c) => ['add', 'install'].includes(c[1]) || c[2] === 'add').map((c) => c.join(' '));
   assert.deepEqual(calls, [
     'plugin marketplace add rafe-walker/isokron-plugins --scope project',
-    'plugin marketplace add rafe-walker/cc-anchor --scope project',
+    'plugin marketplace add rafe-walker/cc-anchor#push-hook --scope project',
     'plugin install kronicle-lite@isokron-plugins --scope project',
     'plugin install cc-anchor@cc-anchor --scope project',
     'plugin install sea-lite@isokron-plugins --scope project',
@@ -584,4 +584,37 @@ test('end to end with the real kronicle-lite and cc-anchor checkouts (Cursor + C
   assert.equal(v.ok, true, JSON.stringify(v.checks.filter((c) => !c.ok)));
   uni.uninstall({ root: sb.root, env: sb.env });
   assert.deepEqual(snapshot(sb.root), before);
+});
+
+// The Cursor port clones cc-anchor when no checkout / plugin is found. It must
+// end on the pinned commit (PINS.ccAnchorSha), not wherever the ref points now.
+const pinnedRepo = () => {
+  if (!fs.existsSync(path.join(REAL_A, '.git'))) return null;
+  const has = spawnSync('git', ['-C', REAL_A, 'cat-file', '-e', `${lib.PINS.ccAnchorSha}^{commit}`]).status === 0;
+  const ref = spawnSync('git', ['-C', REAL_A, 'rev-parse', '--verify', '--quiet', lib.PINS.ccAnchorRef]).status === 0;
+  return has && ref ? `file://${REAL_A}` : null;
+};
+test('Cursor port: the cc-anchor clone ends on the pinned commit (and ships the push/pulse scripts)', { skip: !(lib.PINS.ccAnchorSha && pinnedRepo()) && 'sibling cc-anchor git checkout with the pinned ref/commit not present', timeout: 120000 }, () => {
+  const sb = sandbox({ files: { 'README.md': '# R\n' } });
+  sb.env.ISOKRON_CC_ANCHOR_GIT = pinnedRepo();
+  sb.env.PATH = `${sb.bin}:/usr/bin:/bin`;
+  const out = apply(sb, setup(sb, { clients: ['cursor'] }).p);
+  const r = out.results.find((x) => x.kind === 'cursor-hooks');
+  assert.equal(r?.status, 'added', JSON.stringify(r));
+  for (const f of ['pulse.sh', 'pulse.jq', 'retractions.jq']) assert.ok(fs.existsSync(path.join(sb.root, '.cursor', 'hooks', 'cc-anchor', 'scripts', f)), f);
+});
+
+test('Cursor port: an unreachable pinned commit fails the action instead of installing another version', { skip: !pinnedRepo() && 'sibling cc-anchor git checkout not present', timeout: 120000 }, () => {
+  const saved = lib.PINS.ccAnchorSha;
+  lib.PINS.ccAnchorSha = '0'.repeat(40);
+  try {
+    const sb = sandbox({ files: { 'README.md': '# R\n' } });
+    sb.env.ISOKRON_CC_ANCHOR_GIT = pinnedRepo();
+    sb.env.PATH = `${sb.bin}:/usr/bin:/bin`;
+    const out = apply(sb, setup(sb, { clients: ['cursor'] }).p);
+    const r = out.results.find((x) => x.kind === 'cursor-hooks');
+    assert.equal(r?.status, 'failed');
+    assert.match(r.detail || r.note || JSON.stringify(r), /pinned commit 000000000000 not reachable/);
+    assert.ok(!fs.existsSync(path.join(sb.root, '.cursor', 'hooks', 'cc-anchor')));
+  } finally { lib.PINS.ccAnchorSha = saved; }
 });

@@ -17,7 +17,7 @@ if (a !== 'plugin') die(`fake claude: unsupported ${argv.join(' ')}`);
 if (b === 'list') out(st.plugins);
 if (b === 'marketplace' && c === 'list') out(st.marketplaces);
 if (b === 'marketplace' && c === 'add') {
-  const name = path.basename(d).replace(/\.git$/, '');
+  const name = path.basename(d.replace(/#.*$/, '')).replace(/\.git$/, ''); // like Claude Code: '#ref' pins, it is not part of the name
   if (st.marketplaces.some((m) => m.name === name)) die(`marketplace ${name} already added`);
   st.marketplaces.push({ name, source: 'github', repo: d, scope: flag('--scope', 'user') });
   save(); process.exit(0);

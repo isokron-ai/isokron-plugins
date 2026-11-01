@@ -19,7 +19,13 @@ export const SETUP_VERSION = '0.1.0';
 export const PINS = {
   kronicle: '0.6.0',
   sea: '0.4.0',
-  ccAnchorTag: 'v0.3.0',
+  // cc-anchor: `ccAnchorRef` is the branch or tag (Claude Code marketplace
+  // `rafe-walker/cc-anchor#<ref>`, `git clone --branch <ref>`); `ccAnchorSha`,
+  // when set, is the exact commit the clone must end on (marketplaces cannot
+  // pin a commit, so the Claude Code path follows the ref). On release:
+  // ref = the tag, sha = null.
+  ccAnchorRef: 'push-hook',
+  ccAnchorSha: 'a816bf62190301c5960c9f91344cae955738174e',
   catalogSnap: '0.1.0',
 };
 export const SOURCES = {

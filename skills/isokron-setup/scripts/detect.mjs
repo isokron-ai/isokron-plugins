@@ -309,12 +309,12 @@ export function plan(d, choices = {}) {
   if (cc) {
     const st = d.clients['claude-code'];
     if (!st.cli) {
-      manual.push({ client: 'claude-code', text: 'Claude Code CLI not on PATH. Inside Claude Code run:\n  /plugin marketplace add rafe-walker/isokron-plugins\n  /plugin marketplace add rafe-walker/cc-anchor\n  /plugin install kronicle-lite@isokron-plugins\n  /plugin install cc-anchor@cc-anchor' + (team ? '\n  /plugin install sea-lite@isokron-plugins' : '') });
+      manual.push({ client: 'claude-code', text: 'Claude Code CLI not on PATH. Inside Claude Code run:\n  /plugin marketplace add rafe-walker/isokron-plugins\n  /plugin marketplace add rafe-walker/cc-anchor#' + PINS.ccAnchorRef + '\n  /plugin install kronicle-lite@isokron-plugins\n  /plugin install cc-anchor@cc-anchor' + (team ? '\n  /plugin install sea-lite@isokron-plugins' : '') });
     } else {
       const cscope = choices.claudeScope || (scopeMode === 'project' || team ? 'project' : 'user');
       const mk = [
         { name: 'isokron-plugins', source: choices.marketplaceSource || process.env.ISOKRON_MARKETPLACE_SOURCE || SOURCES.isokronMarketplace },
-        { name: 'cc-anchor', source: choices.ccAnchorSource || process.env.ISOKRON_CC_ANCHOR_SOURCE || SOURCES.ccAnchorMarketplace },
+        { name: 'cc-anchor', source: choices.ccAnchorSource || process.env.ISOKRON_CC_ANCHOR_SOURCE || `${SOURCES.ccAnchorMarketplace}#${PINS.ccAnchorRef}` },
       ];
       for (const m of mk) {
         const have = st.marketplaces.find((x) => x.name === m.name);
@@ -333,7 +333,7 @@ export function plan(d, choices = {}) {
 
   // ── Cowork: cannot be scripted
   if (clients.includes('cowork')) {
-    manual.push({ client: 'cowork', text: 'Cowork (Claude desktop) cannot be scripted. In the app: Customize > Plugins > Add marketplace, enter rafe-walker/isokron-plugins; then select kronicle-lite and click Install' + (team ? ' (and sea-lite)' : '') + '. Repeat Add marketplace with rafe-walker/cc-anchor and install cc-anchor.' });
+    manual.push({ client: 'cowork', text: 'Cowork (Claude desktop) cannot be scripted. In the app: Customize > Plugins > Add marketplace, enter rafe-walker/isokron-plugins; then select kronicle-lite and click Install' + (team ? ' (and sea-lite)' : '') + '. Repeat Add marketplace with rafe-walker/cc-anchor#' + PINS.ccAnchorRef + ' and install cc-anchor.' });
   }
 
   // ── Cursor: .cursor/mcp.json + cc-anchor hooks port
@@ -342,7 +342,7 @@ export function plan(d, choices = {}) {
     for (const [name, value] of Object.entries(clientEntries('cursor', profile))) {
       add({ kind: 'json-key', file, ptr: ['mcpServers', name], value, target: '.cursor/mcp.json', summary: `mcpServers.${name}` });
     }
-    add({ kind: 'cursor-hooks', target: '.cursor/hooks.json + .cursor/hooks/cc-anchor/', summary: `cc-anchor ${PINS.ccAnchorTag} Cursor hooks port (sessionStart, preCompact, postToolUse, preToolUse, stop, subagentStop)`, command: 'node <cc-anchor>/scripts/anchor.mjs cursor install --root <project>' });
+    add({ kind: 'cursor-hooks', target: '.cursor/hooks.json + .cursor/hooks/cc-anchor/', summary: `cc-anchor ${PINS.ccAnchorRef}${PINS.ccAnchorSha ? '@' + PINS.ccAnchorSha.slice(0, 7) : ''} Cursor hooks port (sessionStart, preCompact, postToolUse, preToolUse, stop, subagentStop)`, command: 'node <cc-anchor>/scripts/anchor.mjs cursor install --root <project>' });
   }
 
   // ── Codex: TOML tables
