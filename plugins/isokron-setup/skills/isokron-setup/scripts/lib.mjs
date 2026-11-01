@@ -17,7 +17,7 @@ import path from 'node:path';
 
 export const SETUP_VERSION = '0.1.0';
 export const PINS = {
-  kronicle: '0.5.0',
+  kronicle: '0.6.0',
   sea: '0.4.0',
   ccAnchorTag: 'v0.3.0',
   catalogSnap: '0.1.0',
