@@ -1,6 +1,6 @@
 # What isokron-setup writes, per client
 
-Pinned versions: kronicle-lite 0.4.0, sea-lite 0.2.0, cc-anchor v0.2.0,
+Pinned versions: kronicle-lite 0.4.0, sea-lite 0.3.0, cc-anchor v0.2.0,
 mcp-catalog-snap 0.1.0. All MCP servers run over stdio on the local machine and
 share one store, `~/.kronicle-lite` (or `$KRONICLE_LITE_DATA_DIR`), so every
 client orients against the same chain. Sources: each tool's README.
@@ -16,7 +16,7 @@ claude plugin install sea-lite@isokron-plugins            --scope user|project  
 ```
 
 The plugins bring the MCP servers (`npx -y kronicle-lite@0.4.0 serve`,
-`npx -y sea-lite@0.2.0 serve`), the `orient` and `work-queue` skills and the
+`npx -y sea-lite@0.3.0 serve`), the `orient` and `work-queue` skills and the
 cc-anchor hooks. `project` scope writes `.claude/settings.json`, which
 teammates are prompted to accept.
 
@@ -44,7 +44,7 @@ Source: claude.com/docs/cowork/guide/plugins.
   "mcpServers": {
     "kronicle-lite": { "command": "npx", "args": ["-y", "kronicle-lite@0.4.0", "serve", "--actor", "cursor"] },
     "sea-lite": {
-      "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.2.0", "serve"],
+      "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.3.0", "serve"],
       "env": { "KRONICLE_LITE_DATA_DIR": "${userHome}/.kronicle-lite" }
     }
   }
@@ -75,7 +75,7 @@ args = ["-y", "kronicle-lite@0.4.0", "serve", "--actor", "codex"]
 # isokron:begin sea-lite (…)
 [mcp_servers.sea_lite]
 command = "npx"
-args = ["-y", "sea-lite@0.2.0", "serve", "--actor", "codex"]
+args = ["-y", "sea-lite@0.3.0", "serve", "--actor", "codex"]
 env_vars = ["KRONICLE_LITE_DATA_DIR"]
 startup_timeout_sec = 20
 default_tools_approval_mode = "writes"
@@ -96,7 +96,7 @@ VS Code agent mode, `.vscode/mcp.json` (VS Code format, top-level `servers`):
 ```json
 { "servers": {
   "kronicle-lite": { "type": "stdio", "command": "npx", "args": ["-y", "kronicle-lite@0.4.0", "serve", "--actor", "copilot"] },
-  "sea-lite":      { "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.2.0", "serve", "--actor", "copilot"] }
+  "sea-lite":      { "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.3.0", "serve", "--actor", "copilot"] }
 } }
 ```
 
