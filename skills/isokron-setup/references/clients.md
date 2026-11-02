@@ -6,6 +6,14 @@ mcp-catalog-snap 0.1.0. All MCP servers run over stdio on the local machine and
 share one store, `~/.kronicle-lite` (or `$KRONICLE_LITE_DATA_DIR`), so every
 client orients against the same chain. Sources: each tool's README.
 
+No snippet below passes `--data-dir`. kronicle-lite's exec-time pulse shims
+(`kronicle-lite shim install`) check `$KRONICLE_LITE_DATA_DIR` or
+`~/.kronicle-lite`; a server started on any other directory writes its reads
+and retractions where the shims never look, and a `git push` through the shim
+then succeeds against an empty chain. To move the store, export
+`KRONICLE_LITE_DATA_DIR` where both the client and the shell running the shims
+see it, rather than passing `--data-dir` to the server.
+
 ## Claude Code
 
 ```sh
@@ -57,16 +65,17 @@ Source: claude.com/docs/cowork/guide/plugins.
   "mcpServers": {
     "kronicle-lite": { "command": "npx", "args": ["-y", "kronicle-lite@0.8.0", "serve", "--actor", "cursor"] },
     "sea-lite": {
-      "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.6.0", "serve"],
+      "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.6.0", "serve", "--actor", "cursor"],
       "env": { "KRONICLE_LITE_DATA_DIR": "${userHome}/.kronicle-lite" }
     }
   }
 }
 ```
 
-sea-lite runs without `--actor` in Cursor on purpose: cc-anchor's scope-guard
-hook calls `sea-lite scope-check` without one, and the server and the hook must
-share an actor label or the agent's own claimed paths read as someone else's.
+The sea-lite entry is the sea-lite README's Cursor entry, pinned. cc-anchor's
+scope-guard hook calls `sea-lite scope-check` without `--actor`; it resolves the
+live server's identity (`cursor#<session>`), so the agent's own claimed paths
+still pass.
 
 Hooks: `node <cc-anchor>/scripts/anchor.mjs cursor install --root <project>`
 copies the adapter to `.cursor/hooks/cc-anchor/` and merges six entries into
@@ -121,10 +130,55 @@ GitHub recommends):
 ```json
 { "mcpServers": {
   "kronicle-lite": { "type": "local", "command": "npx",
-    "args": ["-y", "kronicle-lite@0.8.0", "serve", "--data-dir", "./.kronicle-lite", "--actor", "copilot"],
+    "args": ["-y", "kronicle-lite@0.8.0", "serve", "--actor", "copilot"],
     "tools": ["get_system_state", "audit_assumptions", "recall", "verify", "verify_chain"] }
 } }
 ```
+
+team adds `sea-lite` the same way (`serve --actor copilot`,
+`"env": { "SEA_LITE_ROLE": "agent" }`, tools `sea_get`, `sea_list`,
+`sea_history`, `sea_scope_check`).
+
+## Hermes Agent (Nous Research)
+
+Not written by the installer; paste into `~/.hermes/config.yaml` under
+`mcp_servers` (merge with any servers already there), then `/reload-mcp` in a
+session or restart. Source:
+hermes-agent.nousresearch.com/docs/user-guide/features/mcp and
+/docs/reference/mcp-config-reference.
+
+```yaml
+mcp_servers:
+  kronicle-lite:
+    command: "npx"
+    args: ["-y", "kronicle-lite@0.8.0", "serve", "--actor", "hermes"]
+    env:
+      KRONICLE_LITE_DATA_DIR: "${KRONICLE_LITE_DATA_DIR}"
+    connect_timeout: 120
+  sea-lite:            # team
+    command: "npx"
+    args: ["-y", "sea-lite@0.6.0", "serve", "--actor", "hermes"]
+    env:
+      KRONICLE_LITE_DATA_DIR: "${KRONICLE_LITE_DATA_DIR}"
+    connect_timeout: 120
+```
+
+- Hermes does not hand stdio servers your shell environment, only a baseline
+  (`PATH`, `HOME`, `USER`, `LANG`, `TERM`, `SHELL`, `TMPDIR`, `XDG_*`, …) plus
+  the entry's `env`. The `KRONICLE_LITE_DATA_DIR` line forwards the variable
+  when it is set; when it is unset Hermes drops the line, and the server uses
+  `~/.kronicle-lite`, the same store the shims check.
+- `connect_timeout` (default 60 s) also bounds `initialize`; 120 leaves room for
+  the first `npx` download.
+- Tools register as `mcp_kronicle_lite_get_system_state`,
+  `mcp_sea_lite_sea_claim`, …; `tools.include` / `tools.exclude` take the
+  original names.
+- sea-lite keys tickets by the git repository of its working directory. Hermes
+  starts the server in the session's pinned working directory, else in its own
+  process directory; add `cwd: /path/to/repo` if Hermes runs from elsewhere.
+- Hermes loads `.hermes.md`, else `AGENTS.md`, else `CLAUDE.md` as project
+  context, so the wake contract reaches it through `AGENTS.md` unless the
+  project has a `.hermes.md`.
 
 ## ci profile (repos that ship an MCP server)
 
@@ -139,7 +193,8 @@ running `rafe-walker/mcp-catalog-snap@v0.1.0` after `npm ci` /
   `<!-- isokron:begin -->` and `<!-- isokron:end -->`. Skipped when the file
   already mentions `get_system_state` outside such a block. A CLAUDE.md that
   only imports `@AGENTS.md` gets it through AGENTS.md.
-- `.gitignore`: `.isokron/`, `.claude/cc-anchor/` (runtime), `.kronicle-lite/` (Copilot).
+- `.gitignore`: `.isokron/`, `.claude/cc-anchor/` (runtime), `.kronicle-lite/`
+  (Copilot; earlier versions of the coding-agent JSON kept a store in the repo).
 - kronicle-lite docs `<repo>-readme`, `<repo>-claude-md` / `<repo>-agents-md`,
   `<repo>-adr-<name>`; re-seeding skips unchanged files.
 - `.claude/anchor.md`: `Project:` and `Goal:`; the first orient cursor goes to
