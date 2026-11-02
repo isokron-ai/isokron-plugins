@@ -360,10 +360,37 @@ test('plan for Cowork is manual only, and per-client entries match the READMEs',
   assert.match(p.manual[0].text, /Customize > Plugins > Add marketplace/);
   const cur = det.clientEntries('cursor', 'team');
   assert.deepEqual(cur['kronicle-lite'].args, ['-y', 'kronicle-lite@0.8.0', 'serve', '--actor', 'cursor']);
-  assert.ok(!cur['sea-lite'].args.includes('--actor'), 'Cursor sea-lite must share the scope-guard hook\'s default actor');
+  // sea-lite README's Cursor entry (tested): --actor cursor, store pinned to the default dir
+  assert.deepEqual(cur['sea-lite'].args, ['-y', 'sea-lite@0.6.0', 'serve', '--actor', 'cursor']);
   assert.equal(cur['sea-lite'].env.KRONICLE_LITE_DATA_DIR, '${userHome}/.kronicle-lite');
   assert.equal(det.clientEntries('copilot', 'memory')['kronicle-lite'].type, 'stdio');
   assert.deepEqual(det.copilotCodingAgentJson('memory').mcpServers['kronicle-lite'].tools, ['get_system_state', 'audit_assumptions', 'recall', 'verify', 'verify_chain']);
+});
+
+test('no client entry moves the store with --data-dir (the exec-time pulse shims only see the default store, P2-01)', () => {
+  const entries = [];
+  for (const profile of ['memory', 'team', 'ci']) {
+    for (const client of ['cursor', 'copilot']) entries.push(...Object.values(det.clientEntries(client, profile)).map((e) => e.args));
+    for (const block of det.clientEntries('codex', profile)) entries.push([block.body]);
+    entries.push(...Object.values(det.copilotCodingAgentJson(profile).mcpServers).map((e) => e.args));
+  }
+  assert.ok(entries.length >= 12);
+  for (const args of entries) assert.ok(!args.some((a) => /--data-dir/.test(a)), `unexpected --data-dir in ${JSON.stringify(args)}`);
+  // and the reference doc the skill points users at says the same
+  const doc = fs.readFileSync(path.join(repo, 'skills', 'isokron-setup', 'references', 'clients.md'), 'utf8');
+  assert.ok(!/"--data-dir"|--data-dir\s+\S/.test(doc.replace(/`--data-dir`/g, '')), 'clients.md snippets must not pass --data-dir');
+});
+
+test('clients.md Hermes snippet: pinned versions, stdio via npx, data dir forwarded not overridden', () => {
+  const doc = fs.readFileSync(path.join(repo, 'skills', 'isokron-setup', 'references', 'clients.md'), 'utf8');
+  const sec = doc.slice(doc.indexOf('## Hermes Agent'));
+  const yaml = (sec.match(/```yaml\n([\s\S]*?)```/) || [])[1];
+  assert.ok(yaml && /^mcp_servers:\n/.test(yaml), 'Hermes section has a mcp_servers YAML block');
+  assert.ok(yaml.includes(`args: ["-y", "kronicle-lite@${lib.PINS.kronicle}", "serve", "--actor", "hermes"]`));
+  assert.ok(yaml.includes(`args: ["-y", "sea-lite@${lib.PINS.sea}", "serve", "--actor", "hermes"]`));
+  assert.equal((yaml.match(/command: "npx"/g) || []).length, 2);
+  assert.equal((yaml.match(/KRONICLE_LITE_DATA_DIR: "\$\{KRONICLE_LITE_DATA_DIR\}"/g) || []).length, 2);
+  assert.ok(!yaml.includes('--data-dir'));
 });
 
 test('first orient runs as the actor the agent\'s server will use (compact cursors are actor-bound)', () => {

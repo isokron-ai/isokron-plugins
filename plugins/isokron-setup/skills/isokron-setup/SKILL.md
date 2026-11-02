@@ -90,6 +90,8 @@ What it does, per client (exact snippets in `references/clients.md`):
   (or `.codex/config.toml` with `--scope-mode project`); never rewrites other tables.
 - **Copilot**: merges `.vscode/mcp.json` (`servers`); prints the coding-agent
   JSON for repo Settings > Copilot > MCP servers.
+- **Hermes Agent**: not detected or written; if the user runs Hermes, show the
+  `~/.hermes/config.yaml` snippet from `references/clients.md`.
 - **team**: `.claude/cc-anchor.json` `claim_guard` + `scope_guard` (Claude Code and Cursor hooks).
 - **ci**: `.mcp-catalog.json`, baseline snapshot, `.github/workflows/mcp-catalog.yml`.
   Ask for the server launch command if detect could not guess it (`--server-cmd`).

@@ -202,10 +202,11 @@ export function clientEntries(client, profile) {
   const s = `sea-lite@${PINS.sea}`;
   if (client === 'cursor') {
     const out = { 'kronicle-lite': { command: 'npx', args: serverArgs(k, 'cursor') } };
-    // No --actor: the cc-anchor scope guard hook calls `sea-lite scope-check`
-    // without one, so the server must run as the same (default) actor or the
-    // agent's own claimed paths would read as someone else's.
-    if (team) out['sea-lite'] = { type: 'stdio', command: 'npx', args: ['-y', s, 'serve'], env: { KRONICLE_LITE_DATA_DIR: '${userHome}/.kronicle-lite' } };
+    // The sea-lite README's Cursor entry, as tested: `--actor cursor`. The
+    // cc-anchor scope guard runs `sea-lite scope-check` without --actor and
+    // resolves the live server's identity (cursor#<session>), so the agent's
+    // own claimed paths still pass (hard-proto actor-mismatch: exit 0 both ways).
+    if (team) out['sea-lite'] = { type: 'stdio', command: 'npx', args: serverArgs(s, 'cursor'), env: { KRONICLE_LITE_DATA_DIR: '${userHome}/.kronicle-lite' } };
     return out;
   }
   if (client === 'copilot') {
@@ -227,18 +228,21 @@ export function clientEntries(client, profile) {
   return null;
 }
 
+// No entry passes --data-dir: kronicle-lite's exec-time pulse shims check
+// $KRONICLE_LITE_DATA_DIR or ~/.kronicle-lite, so a server on any other
+// directory leaves `git push` & co. checked against an empty chain (P2-01).
 export function copilotCodingAgentJson(profile) {
   const team = profile === 'team' || profile === 'ci';
   const servers = {
     'kronicle-lite': {
       type: 'local', command: 'npx',
-      args: ['-y', `kronicle-lite@${PINS.kronicle}`, 'serve', '--data-dir', './.kronicle-lite', '--actor', 'copilot'],
+      args: ['-y', `kronicle-lite@${PINS.kronicle}`, 'serve', '--actor', 'copilot'],
       tools: ['get_system_state', 'audit_assumptions', 'recall', 'verify', 'verify_chain'],
     },
   };
   if (team) servers['sea-lite'] = {
     type: 'local', command: 'npx',
-    args: ['-y', `sea-lite@${PINS.sea}`, 'serve', '--actor', 'copilot', '--data-dir', '/tmp/sea-lite'],
+    args: ['-y', `sea-lite@${PINS.sea}`, 'serve', '--actor', 'copilot'],
     env: { SEA_LITE_ROLE: 'agent' },
     tools: ['sea_get', 'sea_list', 'sea_history', 'sea_scope_check'],
   };
