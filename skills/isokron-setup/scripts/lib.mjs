@@ -18,7 +18,7 @@ import path from 'node:path';
 export const SETUP_VERSION = '0.1.0';
 export const PINS = {
   kronicle: '0.9.0',
-  sea: '0.6.0',
+  sea: '0.7.0',
   // cc-anchor: `ccAnchorRef` is the branch or tag (Claude Code marketplace
   // `rafe-walker/cc-anchor#<ref>`, `git clone --branch <ref>`); `ccAnchorSha`,
   // when set, is the exact commit the clone must end on (marketplaces cannot

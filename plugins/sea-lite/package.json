@@ -2,5 +2,5 @@
   "name": "isokron-plugin-sea-lite",
   "private": true,
   "description": "Pins the sea-lite MCP server launched by .mcp.json; not published.",
-  "dependencies": { "sea-lite": "0.6.0" }
+  "dependencies": { "sea-lite": "0.7.0" }
 }
