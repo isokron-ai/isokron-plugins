@@ -1,6 +1,6 @@
 # What isokron-setup writes, per client
 
-Pinned versions: kronicle-lite 0.9.0, sea-lite 0.7.0, cc-anchor v0.6.0
+Pinned versions: kronicle-lite 0.10.0, sea-lite 0.7.1, cc-anchor v0.6.0
 (commit 0c3c183),
 mcp-catalog-snap 0.1.0. All MCP servers run over stdio on the local machine and
 share one store, `~/.kronicle-lite` (or `$KRONICLE_LITE_DATA_DIR`), so every
@@ -24,8 +24,8 @@ claude plugin install cc-anchor@cc-anchor                 --scope user|project
 claude plugin install sea-lite@isokron-plugins            --scope user|project   # team
 ```
 
-The plugins bring the MCP servers (`npx -y kronicle-lite@0.9.0 serve`,
-`npx -y sea-lite@0.7.0 serve`), the `orient` and `work-queue` skills and the
+The plugins bring the MCP servers (`npx -y kronicle-lite@0.10.0 serve`,
+`npx -y sea-lite@0.7.1 serve`), the `orient` and `work-queue` skills and the
 cc-anchor hooks. `project` scope writes `.claude/settings.json`, which
 teammates are prompted to accept.
 
@@ -36,7 +36,7 @@ the **pulse** (while a change is pending for the agent's kronicle-lite actor,
 or the store fails integrity, only read-only Bash calls run; nothing pending,
 nothing denied). Both switch on by themselves because the
 kronicle-lite plugin is enabled; nothing to configure. The hooks run the
-kronicle-lite CLI that `npx -y kronicle-lite@0.9.0 serve` leaves in the npx
+kronicle-lite CLI that `npx -y kronicle-lite@0.10.0 serve` leaves in the npx
 cache. Tune or switch off in `.claude/cc-anchor.json` (`push`, `pulse`,
 `pulse_mode: warn`; `pulse_match` and `pulse_chain` are ignored since
 cc-anchor 0.5.1). The sea-lite lease heartbeat is on by default once the
@@ -64,9 +64,9 @@ Source: claude.com/docs/cowork/guide/plugins.
 ```json
 {
   "mcpServers": {
-    "kronicle-lite": { "command": "npx", "args": ["-y", "kronicle-lite@0.9.0", "serve", "--actor", "cursor"] },
+    "kronicle-lite": { "command": "npx", "args": ["-y", "kronicle-lite@0.10.0", "serve", "--actor", "cursor"] },
     "sea-lite": {
-      "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.7.0", "serve", "--actor", "cursor"],
+      "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.7.1", "serve", "--actor", "cursor"],
       "env": { "KRONICLE_LITE_DATA_DIR": "${userHome}/.kronicle-lite" }
     }
   }
@@ -92,13 +92,13 @@ Codex reads that only in a trusted project). Appended as marked blocks:
 # isokron:begin kronicle-lite (added by isokron-setup; its uninstall removes this block)
 [mcp_servers.kronicle-lite]
 command = "npx"
-args = ["-y", "kronicle-lite@0.9.0", "serve", "--actor", "codex"]
+args = ["-y", "kronicle-lite@0.10.0", "serve", "--actor", "codex"]
 # isokron:end kronicle-lite
 
 # isokron:begin sea-lite (…)
 [mcp_servers.sea_lite]
 command = "npx"
-args = ["-y", "sea-lite@0.7.0", "serve", "--actor", "codex"]
+args = ["-y", "sea-lite@0.7.1", "serve", "--actor", "codex"]
 env_vars = ["KRONICLE_LITE_DATA_DIR"]
 startup_timeout_sec = 20
 default_tools_approval_mode = "writes"
@@ -118,8 +118,8 @@ VS Code agent mode, `.vscode/mcp.json` (VS Code format, top-level `servers`):
 
 ```json
 { "servers": {
-  "kronicle-lite": { "type": "stdio", "command": "npx", "args": ["-y", "kronicle-lite@0.9.0", "serve", "--actor", "copilot"] },
-  "sea-lite":      { "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.7.0", "serve", "--actor", "copilot"] }
+  "kronicle-lite": { "type": "stdio", "command": "npx", "args": ["-y", "kronicle-lite@0.10.0", "serve", "--actor", "copilot"] },
+  "sea-lite":      { "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.7.1", "serve", "--actor", "copilot"] }
 } }
 ```
 
@@ -131,7 +131,7 @@ GitHub recommends):
 ```json
 { "mcpServers": {
   "kronicle-lite": { "type": "local", "command": "npx",
-    "args": ["-y", "kronicle-lite@0.9.0", "serve", "--actor", "copilot"],
+    "args": ["-y", "kronicle-lite@0.10.0", "serve", "--actor", "copilot"],
     "tools": ["get_system_state", "audit_assumptions", "recall", "verify", "verify_chain"] }
 } }
 ```
@@ -152,13 +152,13 @@ hermes-agent.nousresearch.com/docs/user-guide/features/mcp and
 mcp_servers:
   kronicle-lite:
     command: "npx"
-    args: ["-y", "kronicle-lite@0.9.0", "serve", "--actor", "hermes"]
+    args: ["-y", "kronicle-lite@0.10.0", "serve", "--actor", "hermes"]
     env:
       KRONICLE_LITE_DATA_DIR: "${KRONICLE_LITE_DATA_DIR}"
     connect_timeout: 120
   sea-lite:            # team
     command: "npx"
-    args: ["-y", "sea-lite@0.7.0", "serve", "--actor", "hermes"]
+    args: ["-y", "sea-lite@0.7.1", "serve", "--actor", "hermes"]
     env:
       KRONICLE_LITE_DATA_DIR: "${KRONICLE_LITE_DATA_DIR}"
     connect_timeout: 120
