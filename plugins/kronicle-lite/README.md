@@ -27,7 +27,7 @@ Every tool sets a `title` and MCP annotations. `openWorldHint` is `true` on `che
 ## Install
 
 ```sh
-claude plugin marketplace add rafe-walker/isokron-plugins
+claude plugin marketplace add isokron-ai/isokron-plugins
 ```
 
 Then inside Claude Code:
@@ -40,7 +40,7 @@ Requires Node >= 20 on the machine, since the server runs through `npx`.
 
 ## Usage
 
-Type the bare word `orient` at the start of a session, after a compaction, or whenever a tool result disagrees with what you remember. The skill calls `get_system_state` with your previous cursor and walks you through reconciling retractions before you act. Pair it with the two-line wake contract from the upstream repo's [`examples/.claude/CLAUDE.md`](https://github.com/rafe-walker/kronicle-lite/tree/main/examples) if you want every session to re-ground automatically.
+Type the bare word `orient` at the start of a session, after a compaction, or whenever a tool result disagrees with what you remember. The skill calls `get_system_state` with your previous cursor and walks you through reconciling retractions before you act. Pair it with the two-line wake contract from the upstream repo's [`examples/.claude/CLAUDE.md`](https://github.com/isokron-ai/kronicle-lite/tree/main/examples) if you want every session to re-ground automatically.
 
 Store a document from a shell to see the chain in action:
 
@@ -73,11 +73,11 @@ The server inherits Claude Code's environment, so set these in your shell or set
 
 ## Skill source
 
-`skills/orient/SKILL.md` is a verbatim copy of [`skills/orient/SKILL.md` in rafe-walker/kronicle-lite](https://github.com/rafe-walker/kronicle-lite/blob/main/skills/orient/SKILL.md) at v0.10.0. The upstream repo is the source of truth; run `node scripts/sync-skills.mjs` from the marketplace root to refresh the copy after an upstream release, then bump `version` in `.claude-plugin/plugin.json` and the pin in `.mcp.json` together.
+`skills/orient/SKILL.md` is a verbatim copy of [`skills/orient/SKILL.md` in isokron-ai/kronicle-lite](https://github.com/isokron-ai/kronicle-lite/blob/main/skills/orient/SKILL.md) at v0.10.0. The upstream repo is the source of truth; run `node scripts/sync-skills.mjs` from the marketplace root to refresh the copy after an upstream release, then bump `version` in `.claude-plugin/plugin.json` and the pin in `.mcp.json` together.
 
 ## Links
 
-- Source and docs: <https://github.com/rafe-walker/kronicle-lite>
-- Issues and support: <https://github.com/rafe-walker/kronicle-lite/issues>
+- Source and docs: <https://github.com/isokron-ai/kronicle-lite>
+- Issues and support: <https://github.com/isokron-ai/kronicle-lite/issues>
 - Privacy policy: <https://isokron.ai/privacy>
 - License: Apache-2.0 (see `LICENSE`)

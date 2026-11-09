@@ -15,13 +15,13 @@ Both servers run over stdio on the local machine, store everything in `~/.kronic
 From your project, in any coding agent that runs shell commands:
 
 ```sh
-npx skills add rafe-walker/isokron-plugins --skill isokron-setup
+npx skills add isokron-ai/isokron-plugins --skill isokron-setup
 ```
 
 then ask the agent to "set up isokron" (the `skills` CLI needs Node >= 22.20; the installer itself needs Node >= 20). In Claude Code you can use the plugin instead:
 
 ```sh
-claude plugin marketplace add rafe-walker/isokron-plugins && claude plugin install isokron-setup@isokron-plugins
+claude plugin marketplace add isokron-ai/isokron-plugins && claude plugin install isokron-setup@isokron-plugins
 ```
 
 The skill detects your client(s) (Claude Code, Cowork, Cursor, Codex, GitHub Copilot) and the project, prints one plan listing every file it will write and every command it will run, and asks once (user-global files such as `~/.codex/config.toml` are named in that question). Then it installs the profile you picked:
@@ -39,7 +39,7 @@ It seeds the project (a marked wake-contract block in `CLAUDE.md` / `AGENTS.md`;
 Add the marketplace once:
 
 ```sh
-claude plugin marketplace add rafe-walker/isokron-plugins
+claude plugin marketplace add isokron-ai/isokron-plugins
 ```
 
 Then install either or both plugins from inside Claude Code:
@@ -97,8 +97,8 @@ SUBMISSION.md                       how to submit each plugin to the Claude dire
 
 ## Source repositories
 
-- kronicle-lite: <https://github.com/rafe-walker/kronicle-lite>
-- sea-lite: <https://github.com/rafe-walker/sea-lite>
+- kronicle-lite: <https://github.com/isokron-ai/kronicle-lite>
+- sea-lite: <https://github.com/isokron-ai/sea-lite>
 
 Issues about the servers go to those repos; issues about packaging go here.
 

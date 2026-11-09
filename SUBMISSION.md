@@ -8,7 +8,7 @@ Three submissions, one per plugin folder. The directory refuses a marketplace ro
 | --- | --- |
 | Paid claude.ai plan: Pro, Max, Team or Enterprise (Free cannot submit). On Team/Enterprise you must be an Owner or hold the **Directory** permission | You confirm |
 | GitHub account connected on claude.ai **in the organization you submit from**, with push access to the repo. A connection made in another Claude org does not carry over | You confirm (Settings > Connectors > GitHub) |
-| Repo `rafe-walker/isokron-plugins` on github.com. It may be private for Validate + submit (needs the Claude GitHub App installed on it and your consent to source upload), **must be public before Publish** | Push this repo; make public |
+| Repo `isokron-ai/isokron-plugins` on github.com. It may be private for Validate + submit (needs the Claude GitHub App installed on it and your consent to source upload), **must be public before Publish** | Push this repo; make public |
 | The first organization to submit a given repo+folder owns the listing forever. Submit from the org that should own IsoKron's listings long term | Decide once |
 | **Icon**: the listing icon is read only on the FIRST save/submit in the portal; adding it later does not change the listing. Add a square PNG, 512 to 2048 px, under 2 MB, at `plugins/<name>/.claude-plugin/icon.png` (or set `"icon": "./…"` in plugin.json) **before** the first save | Done: `plugins/<name>/.claude-plugin/icon.png`, 1024 px, original marks |
 | 10 submissions per org per 24 h, drafts and withdrawals count | Three needed |
@@ -37,7 +37,7 @@ Open <https://claude.ai/directory/manage> and select **Submit new**. Under **Wha
 
 | Field | kronicle-lite | sea-lite | isokron-setup |
 | --- | --- | --- | --- |
-| Repository | `rafe-walker/isokron-plugins` | `rafe-walker/isokron-plugins` | `rafe-walker/isokron-plugins` |
+| Repository | `isokron-ai/isokron-plugins` | `isokron-ai/isokron-plugins` | `isokron-ai/isokron-plugins` |
 | Plugin path (optional) | `plugins/kronicle-lite` | `plugins/sea-lite` | `plugins/isokron-setup` |
 | Branch or tag (optional) | leave empty (follows default branch `main`) | leave empty | leave empty |
 
@@ -55,10 +55,10 @@ Nothing to type. The portal reads these from `plugin.json` and `README.md`. What
 | Short description | Hash-chained local document store with signed retrieval receipts and an orient protocol that tells the agent when its notes went stale. | Fenced work queue for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history. Composes with kronicle-lite. | One-command installer for the IsoKron agent toolset: detects Claude Code, Cowork, Cursor, Codex and Copilot, shows one plan, asks once, then installs kronicle-lite + orient, cc-anchor and (team) sea-lite, seeds the wake contract and the chain, runs the first orient and verifies. Fully reversible. |
 | Author | IsoKron, <https://isokron.ai> | same | same |
 | Homepage | <https://isokron.ai> | same | same |
-| Repository | <https://github.com/rafe-walker/kronicle-lite> | <https://github.com/rafe-walker/sea-lite> | <https://github.com/rafe-walker/isokron-plugins> |
+| Repository | <https://github.com/isokron-ai/kronicle-lite> | <https://github.com/isokron-ai/sea-lite> | <https://github.com/isokron-ai/isokron-plugins> |
 | License | Apache-2.0 (plus `LICENSE` file in the folder) | same | same |
-| Documentation (`documentationUrl`) | <https://github.com/rafe-walker/kronicle-lite#readme> | <https://github.com/rafe-walker/sea-lite#readme> | <https://github.com/rafe-walker/isokron-plugins/tree/main/plugins/isokron-setup#readme> |
-| Support (`supportUrl`) | <https://github.com/rafe-walker/kronicle-lite/issues> | <https://github.com/rafe-walker/sea-lite/issues> | <https://github.com/rafe-walker/isokron-plugins/issues> |
+| Documentation (`documentationUrl`) | <https://github.com/isokron-ai/kronicle-lite#readme> | <https://github.com/isokron-ai/sea-lite#readme> | <https://github.com/isokron-ai/isokron-plugins/tree/main/plugins/isokron-setup#readme> |
+| Support (`supportUrl`) | <https://github.com/isokron-ai/kronicle-lite/issues> | <https://github.com/isokron-ai/sea-lite/issues> | <https://github.com/isokron-ai/isokron-plugins/issues> |
 | Privacy policy (`privacyPolicyUrl`) | <https://isokron.ai/privacy> (returned HTTP 200 on 2026-10-31) | same | same |
 | Terms of service (`termsOfServiceUrl`) | not set (optional) | not set | not set |
 | Long description | `plugins/<name>/README.md` | same | same |
@@ -81,7 +81,7 @@ Suggested answers. Both servers keep their data local; kronicle-lite also contac
 | Question | Answer | Why |
 | --- | --- | --- |
 | Does the plugin read or store personal data? | **No.** It reads the project's README, CLAUDE.md / AGENTS.md and chosen ADRs and stores them in the user's local kronicle-lite chain (`~/.kronicle-lite`). It writes `.isokron/setup-manifest.json` in the project. The publisher never receives anything. | Scripts use only Node's standard library; no network code of their own |
-| Does it send data to services other than its declared connectors? | **No.** Outbound traffic is only what the commands it runs do: `claude plugin marketplace add` / `install` (GitHub: `rafe-walker/isokron-plugins`, `rafe-walker/cc-anchor`), `npx` (npm registry: `kronicle-lite@0.10.0`, `sea-lite@0.7.1`, `mcp-catalog-snap@0.1.0`) and, for Cursor without Claude Code, `git clone` of `github.com/rafe-walker/cc-anchor` at `v0.6.0` into a temp dir. | All three destinations are named in the plugin README |
+| Does it send data to services other than its declared connectors? | **No.** Outbound traffic is only what the commands it runs do: `claude plugin marketplace add` / `install` (GitHub: `isokron-ai/isokron-plugins`, `isokron-ai/cc-anchor`), `npx` (npm registry: `kronicle-lite@0.10.0`, `sea-lite@0.7.1`, `mcp-catalog-snap@0.1.0`) and, for Cursor without Claude Code, `git clone` of `github.com/isokron-ai/cc-anchor` at `v0.6.0` into a temp dir. | All three destinations are named in the plugin README |
 | Does it change configuration outside the project? | **Only after the user answers the plan question**, and only the files that question names: `~/.claude/settings.json` via `claude plugin` (user scope), `~/.codex/config.toml` (marked block). Each is backed up as `*.bak-isokron`; `uninstall.mjs` reverses it. `--scope-mode project` keeps everything in the repo. | State it up front; this is the likeliest reviewer question |
 | How long is data kept? | Until the user runs `uninstall.mjs` (config) or deletes `~/.kronicle-lite` (seeded docs; the chain is append-only). | |
 | Intended for people under 18? | **No** | |
@@ -143,7 +143,7 @@ Current state, from `src/server.ts` in each upstream repo at the pinned versions
 
 ## 4. Things the docs ask for that this repo cannot satisfy yet
 
-- **Public repository**: `rafe-walker/isokron-plugins` does not exist on GitHub yet. Create it, push `main`, make it public before Publish.
+- **Public repository**: `isokron-ai/isokron-plugins` does not exist on GitHub yet. Create it, push `main`, make it public before Publish.
 - **Icon**: no IsoKron icon asset is in this repo or the upstream repos. Add `plugins/<name>/.claude-plugin/icon.png` (square PNG, 512 to 2048 px, under 2 MB) before the first portal save, or the listing will never have one.
 - **Avoiding the npx reviewer hold**: not possible without vendoring a native-dependency server; accept it.
 - **`claude plugin validate` vs the portal**: the CLI covers a subset. The portal's **Validate** runs name-collision and the full file checks; run it before trusting the local pass.

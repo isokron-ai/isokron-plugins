@@ -5,14 +5,14 @@ One skill that takes a project from zero to a working **orient loop** in whateve
 ## Use it
 
 ```sh
-claude plugin marketplace add rafe-walker/isokron-plugins
+claude plugin marketplace add isokron-ai/isokron-plugins
 claude plugin install isokron-setup@isokron-plugins
 ```
 
 Then, in the project, ask Claude to "set up isokron" (or run `/isokron-setup:isokron-setup`). Outside Claude Code the same skill installs with the cross-client Agent Skills CLI:
 
 ```sh
-npx skills add rafe-walker/isokron-plugins --skill isokron-setup
+npx skills add isokron-ai/isokron-plugins --skill isokron-setup
 ```
 
 ## What it installs
@@ -33,6 +33,6 @@ Per client: Claude Code gets the plugins through `claude plugin marketplace add`
 
 ## What it runs and sends
 
-The skill's scripts use only Node's standard library and run locally. They call `claude`, `git`, `npx` (the pinned packages `kronicle-lite@0.10.0`, `sea-lite@0.7.1`, `mcp-catalog-snap@0.1.0` from the public npm registry) and, for Cursor without Claude Code, `git clone` of `github.com/rafe-walker/cc-anchor` at tag `v0.6.0` (commit `0c3c183`, verified) into a temporary directory. Data stays in `~/.kronicle-lite` on your machine; nothing is sent to IsoKron.
+The skill's scripts use only Node's standard library and run locally. They call `claude`, `git`, `npx` (the pinned packages `kronicle-lite@0.10.0`, `sea-lite@0.7.1`, `mcp-catalog-snap@0.1.0` from the public npm registry) and, for Cursor without Claude Code, `git clone` of `github.com/isokron-ai/cc-anchor` at tag `v0.6.0` (commit `0c3c183`, verified) into a temporary directory. Data stays in `~/.kronicle-lite` on your machine; nothing is sent to IsoKron.
 
-Source: `skills/isokron-setup/` in [rafe-walker/isokron-plugins](https://github.com/rafe-walker/isokron-plugins). License: Apache-2.0.
+Source: `skills/isokron-setup/` in [isokron-ai/isokron-plugins](https://github.com/isokron-ai/isokron-plugins). License: Apache-2.0.

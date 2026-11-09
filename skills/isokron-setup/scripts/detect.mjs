@@ -313,7 +313,7 @@ export function plan(d, choices = {}) {
   if (cc) {
     const st = d.clients['claude-code'];
     if (!st.cli) {
-      manual.push({ client: 'claude-code', text: 'Claude Code CLI not on PATH. Inside Claude Code run:\n  /plugin marketplace add rafe-walker/isokron-plugins\n  /plugin marketplace add rafe-walker/cc-anchor#' + PINS.ccAnchorRef + '\n  /plugin install kronicle-lite@isokron-plugins\n  /plugin install cc-anchor@cc-anchor' + (team ? '\n  /plugin install sea-lite@isokron-plugins' : '') });
+      manual.push({ client: 'claude-code', text: 'Claude Code CLI not on PATH. Inside Claude Code run:\n  /plugin marketplace add isokron-ai/isokron-plugins\n  /plugin marketplace add isokron-ai/cc-anchor#' + PINS.ccAnchorRef + '\n  /plugin install kronicle-lite@isokron-plugins\n  /plugin install cc-anchor@cc-anchor' + (team ? '\n  /plugin install sea-lite@isokron-plugins' : '') });
     } else {
       const cscope = choices.claudeScope || (scopeMode === 'project' || team ? 'project' : 'user');
       const mk = [
@@ -337,7 +337,7 @@ export function plan(d, choices = {}) {
 
   // ── Cowork: cannot be scripted
   if (clients.includes('cowork')) {
-    manual.push({ client: 'cowork', text: 'Cowork (Claude desktop) cannot be scripted. In the app: Customize > Plugins > Add marketplace, enter rafe-walker/isokron-plugins; then select kronicle-lite and click Install' + (team ? ' (and sea-lite)' : '') + '. Repeat Add marketplace with rafe-walker/cc-anchor#' + PINS.ccAnchorRef + ' and install cc-anchor.' });
+    manual.push({ client: 'cowork', text: 'Cowork (Claude desktop) cannot be scripted. In the app: Customize > Plugins > Add marketplace, enter isokron-ai/isokron-plugins; then select kronicle-lite and click Install' + (team ? ' (and sea-lite)' : '') + '. Repeat Add marketplace with isokron-ai/cc-anchor#' + PINS.ccAnchorRef + ' and install cc-anchor.' });
   }
 
   // ── Cursor: .cursor/mcp.json + cc-anchor hooks port

@@ -162,7 +162,7 @@ export function summary(v) {
   if (c.includes('cursor')) L.push('  Cursor       reload the window; enable kronicle-lite' + (v.team ? ' / sea-lite' : '') + ' under Settings > MCP; hooks (.cursor/hooks.json) and .agents/skills/orient are live');
   if (c.includes('codex')) L.push('  Codex        new `codex` session; `/mcp` lists kronicle-lite' + (v.team ? ' and sea_lite (writes prompt for approval)' : '') + '; the orient skill is in .agents/skills');
   if (c.includes('copilot')) L.push('  Copilot      VS Code agent mode: start the servers from .vscode/mcp.json; coding agent: paste the JSON shown at install into repo Settings > Copilot > MCP servers');
-  if (c.includes('cowork')) L.push('  Cowork       Customize > Plugins > Add marketplace (rafe-walker/isokron-plugins) > Install');
+  if (c.includes('cowork')) L.push('  Cowork       Customize > Plugins > Add marketplace (isokron-ai/isokron-plugins) > Install');
   L.push('  Every agent  reads the wake contract: get_system_state with your last cursor before material work.');
   L.push('  Undo         node uninstall.mjs --yes  (reverses every recorded change; backups are *.bak-isokron)');
   return L.join('\n');
