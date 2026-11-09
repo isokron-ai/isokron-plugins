@@ -243,7 +243,7 @@ test('slugify yields kronicle-lite-safe slugs', () => {
 
 test('detect finds Claude Code through the CLI and ~/.claude, with its plugins and marketplaces', () => {
   const sb = sandbox({ claude: true, homeFiles: { '.claude/settings.json': '{}' } });
-  fs.writeFileSync(sb.env.FAKE_CLAUDE_STATE, JSON.stringify({ marketplaces: [{ name: 'isokron-plugins', repo: 'rafe-walker/isokron-plugins' }], plugins: [{ id: 'kronicle-lite@isokron-plugins', version: '0.3.0', scope: 'user', enabled: true }], calls: [] }));
+  fs.writeFileSync(sb.env.FAKE_CLAUDE_STATE, JSON.stringify({ marketplaces: [{ name: 'isokron-plugins', repo: 'isokron-ai/isokron-plugins' }], plugins: [{ id: 'kronicle-lite@isokron-plugins', version: '0.3.0', scope: 'user', enabled: true }], calls: [] }));
   const d = det.detect({ cwd: sb.root, env: sb.env });
   const c = d.clients['claude-code'];
   assert.equal(c.detected, true);
@@ -313,8 +313,8 @@ test('plan(memory, claude-code) adds both marketplaces and the two plugins at us
   const { p } = setup(sb, { clients: ['claude-code'] });
   const cmds = p.actions.filter((a) => a.kind.startsWith('claude-')).map((a) => a.command);
   assert.deepEqual(cmds, [
-    'claude plugin marketplace add rafe-walker/isokron-plugins --scope user',
-    "claude plugin marketplace add 'rafe-walker/cc-anchor#v0.6.0' --scope user",
+    'claude plugin marketplace add isokron-ai/isokron-plugins --scope user',
+    "claude plugin marketplace add 'isokron-ai/cc-anchor#v0.6.0' --scope user",
     'claude plugin install kronicle-lite@isokron-plugins --scope user',
     'claude plugin install cc-anchor@cc-anchor --scope user',
   ]);
@@ -410,7 +410,7 @@ test('plan(ci) adds the catalog baseline only for MCP-server repos', () => {
   const p2 = setup(sb2, { clients: ['claude-code'], profile: 'ci' }).p;
   assert.deepEqual(p2.actions.filter((a) => a.file?.includes('mcp-catalog') || a.kind === 'catalog-snapshot').map((a) => a.target), ['.mcp-catalog.json', '.mcp-catalog/srv.json', '.github/workflows/mcp-catalog.yml']);
   const wf = p2.actions.find((a) => a.target === '.github/workflows/mcp-catalog.yml').content;
-  assert.match(wf, /uses: rafe-walker\/mcp-catalog-snap@v0\.1\.0/);
+  assert.match(wf, /uses: isokron-ai\/mcp-catalog-snap@v0\.1\.0/);
 });
 
 // ───────────────────────────── install / uninstall ─────────────────────────────
@@ -497,8 +497,8 @@ test('install runs the exact claude plugin commands, in order', () => {
   apply(sb, setup(sb, { clients: ['claude-code'], profile: 'team' }).p);
   const calls = sb.claudeState().calls.filter((c) => ['add', 'install'].includes(c[1]) || c[2] === 'add').map((c) => c.join(' '));
   assert.deepEqual(calls, [
-    'plugin marketplace add rafe-walker/isokron-plugins --scope project',
-    'plugin marketplace add rafe-walker/cc-anchor#v0.6.0 --scope project',
+    'plugin marketplace add isokron-ai/isokron-plugins --scope project',
+    'plugin marketplace add isokron-ai/cc-anchor#v0.6.0 --scope project',
     'plugin install kronicle-lite@isokron-plugins --scope project',
     'plugin install cc-anchor@cc-anchor --scope project',
     'plugin install sea-lite@isokron-plugins --scope project',
@@ -551,7 +551,7 @@ test('uninstall keeps edits the user made after install and keeps the backup for
 
 test('uninstall only removes plugins and marketplaces that install added', () => {
   const sb = fullSandbox();
-  fs.writeFileSync(sb.env.FAKE_CLAUDE_STATE, JSON.stringify({ marketplaces: [{ name: 'isokron-plugins', repo: 'rafe-walker/isokron-plugins' }], plugins: [{ id: 'kronicle-lite@isokron-plugins', version: '0.3.0', scope: 'user', enabled: true }], calls: [] }));
+  fs.writeFileSync(sb.env.FAKE_CLAUDE_STATE, JSON.stringify({ marketplaces: [{ name: 'isokron-plugins', repo: 'isokron-ai/isokron-plugins' }], plugins: [{ id: 'kronicle-lite@isokron-plugins', version: '0.3.0', scope: 'user', enabled: true }], calls: [] }));
   apply(sb, setup(sb, { clients: ['claude-code'] }).p);
   uni.uninstall({ root: sb.root, env: sb.env });
   const st = sb.claudeState();

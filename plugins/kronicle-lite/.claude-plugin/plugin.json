@@ -8,7 +8,7 @@
     "url": "https://isokron.ai"
   },
   "homepage": "https://isokron.ai",
-  "repository": "https://github.com/rafe-walker/kronicle-lite",
+  "repository": "https://github.com/isokron-ai/kronicle-lite",
   "license": "Apache-2.0",
   "keywords": [
     "mcp",
@@ -22,7 +22,7 @@
     "sqlite",
     "local-first"
   ],
-  "documentationUrl": "https://github.com/rafe-walker/kronicle-lite#readme",
-  "supportUrl": "https://github.com/rafe-walker/kronicle-lite/issues",
+  "documentationUrl": "https://github.com/isokron-ai/kronicle-lite#readme",
+  "supportUrl": "https://github.com/isokron-ai/kronicle-lite/issues",
   "privacyPolicyUrl": "https://isokron.ai/privacy"
 }

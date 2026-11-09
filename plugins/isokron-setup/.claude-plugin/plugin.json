@@ -8,7 +8,7 @@
     "url": "https://isokron.ai"
   },
   "homepage": "https://isokron.ai",
-  "repository": "https://github.com/rafe-walker/isokron-plugins",
+  "repository": "https://github.com/isokron-ai/isokron-plugins",
   "license": "Apache-2.0",
   "keywords": [
     "installer",
@@ -23,7 +23,7 @@
     "copilot",
     "agent-skills"
   ],
-  "documentationUrl": "https://github.com/rafe-walker/isokron-plugins/tree/main/plugins/isokron-setup#readme",
-  "supportUrl": "https://github.com/rafe-walker/isokron-plugins/issues",
+  "documentationUrl": "https://github.com/isokron-ai/isokron-plugins/tree/main/plugins/isokron-setup#readme",
+  "supportUrl": "https://github.com/isokron-ai/isokron-plugins/issues",
   "privacyPolicyUrl": "https://isokron.ai/privacy"
 }

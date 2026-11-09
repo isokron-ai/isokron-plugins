@@ -78,8 +78,8 @@ node "${CLAUDE_SKILL_DIR}/scripts/install.mjs" --profile <p> [--clients a,b] [--
 
 What it does, per client (exact snippets in `references/clients.md`):
 
-- **Claude Code**: `claude plugin marketplace add rafe-walker/isokron-plugins`,
-  `… add rafe-walker/cc-anchor#v0.6.0`, `claude plugin install kronicle-lite@isokron-plugins`,
+- **Claude Code**: `claude plugin marketplace add isokron-ai/isokron-plugins`,
+  `… add isokron-ai/cc-anchor#v0.6.0`, `claude plugin install kronicle-lite@isokron-plugins`,
   `cc-anchor@cc-anchor` (+ `sea-lite@isokron-plugins` for team). Scope `user`
   for memory, `project` for team or `--scope-mode project`.
 - **Cowork**: cannot be scripted; print the click path from the plan.

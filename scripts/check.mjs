@@ -147,7 +147,7 @@ for (const e of entries) {
 }
 
 // ---- standalone Agent Skills (skills/<name>/SKILL.md, agentskills.io spec) --
-// `npx skills add rafe-walker/isokron-plugins` discovers skills/ first. The
+// `npx skills add isokron-ai/isokron-plugins` discovers skills/ first. The
 // spec: name 1-64 chars [a-z0-9-], no leading/trailing/double hyphen, equal to
 // the folder name; description 1-1024 chars; compatibility <= 500 chars;
 // metadata a map of string -> string.

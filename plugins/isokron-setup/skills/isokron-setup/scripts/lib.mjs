@@ -20,7 +20,7 @@ export const PINS = {
   kronicle: '0.10.0',
   sea: '0.7.1',
   // cc-anchor: `ccAnchorRef` is the branch or tag (Claude Code marketplace
-  // `rafe-walker/cc-anchor#<ref>`, `git clone --branch <ref>`); `ccAnchorSha`,
+  // `isokron-ai/cc-anchor#<ref>`, `git clone --branch <ref>`); `ccAnchorSha`,
   // when set, is the exact commit the clone must end on (marketplaces cannot
   // pin a commit, so the Claude Code path follows the ref). Kept set on a
   // tag too: if the tag is ever moved, the Cursor clone still ends on this
@@ -30,10 +30,10 @@ export const PINS = {
   catalogSnap: '0.1.0',
 };
 export const SOURCES = {
-  isokronMarketplace: 'rafe-walker/isokron-plugins',
-  ccAnchorMarketplace: 'rafe-walker/cc-anchor',
-  ccAnchorGit: 'https://github.com/rafe-walker/cc-anchor',
-  catalogAction: 'rafe-walker/mcp-catalog-snap@v0.1.0',
+  isokronMarketplace: 'isokron-ai/isokron-plugins',
+  ccAnchorMarketplace: 'isokron-ai/cc-anchor',
+  ccAnchorGit: 'https://github.com/isokron-ai/cc-anchor',
+  catalogAction: 'isokron-ai/mcp-catalog-snap@v0.1.0',
 };
 export const BACKUP_SUFFIX = '.bak-isokron';
 export const MANIFEST_REL = path.join('.isokron', 'setup-manifest.json');

@@ -8,7 +8,7 @@ Run several agents against one backlog and the failure mode is not that they are
 - Claims are **leases** (<= 600 s). An agent that dies stops refreshing; the next reader sees the lapsed lease and treats the ticket as free. No sweeper, no cron.
 - Tickets carry **typed links** (`depends_on`, `blocks`, `parent_of`, ...). `sea_next` will not hand out a ticket whose predecessors are still open, and the precedence graph stays acyclic on every write.
 - `sea_apply` lays down up to 50 tickets and 100 links in one all-or-nothing write.
-- Every change is an event on the hash chain that [kronicle-lite](https://github.com/rafe-walker/kronicle-lite) keeps; the same SQLite file holds both.
+- Every change is an event on the hash chain that [kronicle-lite](https://github.com/isokron-ai/kronicle-lite) keeps; the same SQLite file holds both.
 
 ## What this plugin installs
 
@@ -27,7 +27,7 @@ No tool deletes rows from disk, and the chain keeps every prior state. Some writ
 ## Install
 
 ```sh
-claude plugin marketplace add rafe-walker/isokron-plugins
+claude plugin marketplace add isokron-ai/isokron-plugins
 ```
 
 Then inside Claude Code:
@@ -67,11 +67,11 @@ The server inherits Claude Code's environment, so set these in your shell or set
 
 ## Skill source
 
-`skills/work-queue/SKILL.md` is a verbatim copy of [`skills/work-queue/SKILL.md` in rafe-walker/sea-lite](https://github.com/rafe-walker/sea-lite/blob/main/skills/work-queue/SKILL.md) at v0.7.1. The upstream repo is the source of truth; run `node scripts/sync-skills.mjs` from the marketplace root to refresh the copy after an upstream release, then bump `version` in `.claude-plugin/plugin.json` and the pin in `.mcp.json` together.
+`skills/work-queue/SKILL.md` is a verbatim copy of [`skills/work-queue/SKILL.md` in isokron-ai/sea-lite](https://github.com/isokron-ai/sea-lite/blob/main/skills/work-queue/SKILL.md) at v0.7.1. The upstream repo is the source of truth; run `node scripts/sync-skills.mjs` from the marketplace root to refresh the copy after an upstream release, then bump `version` in `.claude-plugin/plugin.json` and the pin in `.mcp.json` together.
 
 ## Links
 
-- Source and docs: <https://github.com/rafe-walker/sea-lite>
-- Issues and support: <https://github.com/rafe-walker/sea-lite/issues>
+- Source and docs: <https://github.com/isokron-ai/sea-lite>
+- Issues and support: <https://github.com/isokron-ai/sea-lite/issues>
 - Privacy policy: <https://isokron.ai/privacy>
 - License: Apache-2.0 (see `LICENSE`)

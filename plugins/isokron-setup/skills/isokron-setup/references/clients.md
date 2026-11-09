@@ -17,8 +17,8 @@ see it, rather than passing `--data-dir` to the server.
 ## Claude Code
 
 ```sh
-claude plugin marketplace add rafe-walker/isokron-plugins --scope user|project
-claude plugin marketplace add rafe-walker/cc-anchor#v0.6.0 --scope user|project
+claude plugin marketplace add isokron-ai/isokron-plugins --scope user|project
+claude plugin marketplace add isokron-ai/cc-anchor#v0.6.0 --scope user|project
 claude plugin install kronicle-lite@isokron-plugins       --scope user|project
 claude plugin install cc-anchor@cc-anchor                 --scope user|project
 claude plugin install sea-lite@isokron-plugins            --scope user|project   # team
@@ -53,8 +53,8 @@ Optional, not done by the installer because it edits `~/.claude/settings.json`:
 ## Cowork (Claude desktop)
 
 Not scriptable. Customize > Plugins > **Add marketplace** >
-`rafe-walker/isokron-plugins` > select **kronicle-lite** > **Install** (and
-**sea-lite** for team). Repeat **Add marketplace** with `rafe-walker/cc-anchor#v0.6.0`.
+`isokron-ai/isokron-plugins` > select **kronicle-lite** > **Install** (and
+**sea-lite** for team). Repeat **Add marketplace** with `isokron-ai/cc-anchor#v0.6.0`.
 Source: claude.com/docs/cowork/guide/plugins.
 
 ## Cursor
@@ -185,7 +185,7 @@ mcp_servers:
 
 `.mcp-catalog.json` → `npx -y mcp-catalog-snap@0.1.0 snapshot` →
 `.mcp-catalog/<name>.json` baseline, and `.github/workflows/mcp-catalog.yml`
-running `rafe-walker/mcp-catalog-snap@v0.1.0` after `npm ci` /
+running `isokron-ai/mcp-catalog-snap@v0.1.0` after `npm ci` /
 `npm run build --if-present`. The job fails on any byte drift of `tools/list`.
 
 ## Seeded into every project
