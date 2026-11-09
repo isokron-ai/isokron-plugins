@@ -361,7 +361,7 @@ test('plan for Cowork is manual only, and per-client entries match the READMEs',
   const cur = det.clientEntries('cursor', 'team');
   assert.deepEqual(cur['kronicle-lite'].args, ['-y', 'kronicle-lite@0.9.0', 'serve', '--actor', 'cursor']);
   // sea-lite README's Cursor entry (tested): --actor cursor, store pinned to the default dir
-  assert.deepEqual(cur['sea-lite'].args, ['-y', 'sea-lite@0.6.0', 'serve', '--actor', 'cursor']);
+  assert.deepEqual(cur['sea-lite'].args, ['-y', 'sea-lite@0.7.0', 'serve', '--actor', 'cursor']);
   assert.equal(cur['sea-lite'].env.KRONICLE_LITE_DATA_DIR, '${userHome}/.kronicle-lite');
   assert.equal(det.clientEntries('copilot', 'memory')['kronicle-lite'].type, 'stdio');
   assert.deepEqual(det.copilotCodingAgentJson('memory').mcpServers['kronicle-lite'].tools, ['get_system_state', 'audit_assumptions', 'recall', 'verify', 'verify_chain']);
