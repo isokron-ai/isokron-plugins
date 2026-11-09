@@ -1,7 +1,7 @@
 {
   "name": "isokron-plugins",
   "owner": {
-    "name": "Joshua Bryan",
+    "name": "IsoKron",
     "url": "https://isokron.ai"
   },
   "description": "IsoKron's local-first MCP servers for coding agents: kronicle-lite (hash-chained notes with staleness detection), sea-lite (a fenced work queue for parallel agents) and isokron-setup (one-command installer for the whole toolset).",

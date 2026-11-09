@@ -4,7 +4,7 @@
   "version": "0.10.0",
   "description": "Hash-chained local document store with signed retrieval receipts and an orient protocol that tells the agent when its notes went stale.",
   "author": {
-    "name": "Joshua Bryan",
+    "name": "IsoKron",
     "url": "https://isokron.ai"
   },
   "homepage": "https://isokron.ai",

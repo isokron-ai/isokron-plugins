@@ -4,7 +4,7 @@ description: One-command installer for the IsoKron agent toolset (kronicle-lite 
 license: Apache-2.0
 compatibility: Needs node >= 20, npx, git; jq and bash for cc-anchor hooks. Network to the npm registry and GitHub on first install. Works in Claude Code, Cursor, Codex, GitHub Copilot and any Agent Skills client that can run shell commands; Cowork gets printed click steps.
 metadata:
-  author: Joshua Bryan
+  author: IsoKron
   homepage: https://isokron.ai
   version: "0.1.0"
 ---

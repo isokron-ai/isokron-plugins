@@ -53,7 +53,7 @@ Nothing to type. The portal reads these from `plugin.json` and `README.md`. What
 | Display name | Kronicle Lite | Sea Lite | IsoKron Setup |
 | Version | 0.3.0 | 0.2.0 | 0.1.0 |
 | Short description | Hash-chained local document store with signed retrieval receipts and an orient protocol that tells the agent when its notes went stale. | Fenced work queue for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history. Composes with kronicle-lite. | One-command installer for the IsoKron agent toolset: detects Claude Code, Cowork, Cursor, Codex and Copilot, shows one plan, asks once, then installs kronicle-lite + orient, cc-anchor and (team) sea-lite, seeds the wake contract and the chain, runs the first orient and verifies. Fully reversible. |
-| Author | Joshua Bryan, <https://isokron.ai> | same | same |
+| Author | IsoKron, <https://isokron.ai> | same | same |
 | Homepage | <https://isokron.ai> | same | same |
 | Repository | <https://github.com/rafe-walker/kronicle-lite> | <https://github.com/rafe-walker/sea-lite> | <https://github.com/rafe-walker/isokron-plugins> |
 | License | Apache-2.0 (plus `LICENSE` file in the folder) | same | same |
