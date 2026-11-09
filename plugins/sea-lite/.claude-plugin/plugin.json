@@ -4,7 +4,7 @@
   "version": "0.7.1",
   "description": "Fenced work queue for parallel coding agents: leased claims, typed links, atomic batches, hash-chained history. Composes with kronicle-lite.",
   "author": {
-    "name": "Joshua Bryan",
+    "name": "IsoKron",
     "url": "https://isokron.ai"
   },
   "homepage": "https://isokron.ai",
