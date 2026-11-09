@@ -172,7 +172,7 @@ test('mergeTomlBlock appends marked tables, keeps every other table, and is idem
   assert.equal(lib.mergeTomlBlock(f, e.id, e.server, e.body).status, 'added');
   const after = read(f);
   assert.ok(after.startsWith(orig));
-  assert.match(after, /# isokron:begin kronicle-lite[^\n]*\n\[mcp_servers\.kronicle-lite\]\ncommand = "npx"\nargs = \["-y", "kronicle-lite@0\.8\.0", "serve", "--actor", "codex"\]\n# isokron:end kronicle-lite\n$/);
+  assert.match(after, /# isokron:begin kronicle-lite[^\n]*\n\[mcp_servers\.kronicle-lite\]\ncommand = "npx"\nargs = \["-y", "kronicle-lite@0\.9\.0", "serve", "--actor", "codex"\]\n# isokron:end kronicle-lite\n$/);
   assert.equal(lib.mergeTomlBlock(f, e.id, e.server, e.body).status, 'present');
   assert.equal(read(f), after);
 });
@@ -314,7 +314,7 @@ test('plan(memory, claude-code) adds both marketplaces and the two plugins at us
   const cmds = p.actions.filter((a) => a.kind.startsWith('claude-')).map((a) => a.command);
   assert.deepEqual(cmds, [
     'claude plugin marketplace add rafe-walker/isokron-plugins --scope user',
-    "claude plugin marketplace add 'rafe-walker/cc-anchor#v0.5.0' --scope user",
+    "claude plugin marketplace add 'rafe-walker/cc-anchor#v0.6.0' --scope user",
     'claude plugin install kronicle-lite@isokron-plugins --scope user',
     'claude plugin install cc-anchor@cc-anchor --scope user',
   ]);
@@ -359,7 +359,7 @@ test('plan for Cowork is manual only, and per-client entries match the READMEs',
   assert.equal(p.actions.filter((a) => a.phase === 'install').length, 0);
   assert.match(p.manual[0].text, /Customize > Plugins > Add marketplace/);
   const cur = det.clientEntries('cursor', 'team');
-  assert.deepEqual(cur['kronicle-lite'].args, ['-y', 'kronicle-lite@0.8.0', 'serve', '--actor', 'cursor']);
+  assert.deepEqual(cur['kronicle-lite'].args, ['-y', 'kronicle-lite@0.9.0', 'serve', '--actor', 'cursor']);
   // sea-lite README's Cursor entry (tested): --actor cursor, store pinned to the default dir
   assert.deepEqual(cur['sea-lite'].args, ['-y', 'sea-lite@0.6.0', 'serve', '--actor', 'cursor']);
   assert.equal(cur['sea-lite'].env.KRONICLE_LITE_DATA_DIR, '${userHome}/.kronicle-lite');
@@ -477,7 +477,7 @@ test('install runs the exact claude plugin commands, in order', () => {
   const calls = sb.claudeState().calls.filter((c) => ['add', 'install'].includes(c[1]) || c[2] === 'add').map((c) => c.join(' '));
   assert.deepEqual(calls, [
     'plugin marketplace add rafe-walker/isokron-plugins --scope project',
-    'plugin marketplace add rafe-walker/cc-anchor#v0.5.0 --scope project',
+    'plugin marketplace add rafe-walker/cc-anchor#v0.6.0 --scope project',
     'plugin install kronicle-lite@isokron-plugins --scope project',
     'plugin install cc-anchor@cc-anchor --scope project',
     'plugin install sea-lite@isokron-plugins --scope project',
@@ -628,7 +628,7 @@ test('Cursor port: the cc-anchor clone ends on the pinned commit (and ships the 
   const out = apply(sb, setup(sb, { clients: ['cursor'] }).p);
   const r = out.results.find((x) => x.kind === 'cursor-hooks');
   assert.equal(r?.status, 'added', JSON.stringify(r));
-  for (const f of ['pulse.sh', 'pulse.jq', 'retractions.jq']) assert.ok(fs.existsSync(path.join(sb.root, '.cursor', 'hooks', 'cc-anchor', 'scripts', f)), f);
+  for (const f of ['pulse.sh', 'readonly.jq', 'owed.jq', 'retractions.jq']) assert.ok(fs.existsSync(path.join(sb.root, '.cursor', 'hooks', 'cc-anchor', 'scripts', f)), f);
 });
 
 test('Cursor port: an unreachable pinned commit fails the action instead of installing another version', { skip: !pinnedRepo() && 'sibling cc-anchor git checkout not present', timeout: 120000 }, () => {

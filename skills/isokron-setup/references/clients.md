@@ -1,7 +1,7 @@
 # What isokron-setup writes, per client
 
-Pinned versions: kronicle-lite 0.8.0, sea-lite 0.6.0, cc-anchor v0.5.0
-(commit dfc6259),
+Pinned versions: kronicle-lite 0.9.0, sea-lite 0.6.0, cc-anchor v0.6.0
+(commit 0c3c183),
 mcp-catalog-snap 0.1.0. All MCP servers run over stdio on the local machine and
 share one store, `~/.kronicle-lite` (or `$KRONICLE_LITE_DATA_DIR`), so every
 client orients against the same chain. Sources: each tool's README.
@@ -18,13 +18,13 @@ see it, rather than passing `--data-dir` to the server.
 
 ```sh
 claude plugin marketplace add rafe-walker/isokron-plugins --scope user|project
-claude plugin marketplace add rafe-walker/cc-anchor#v0.5.0 --scope user|project
+claude plugin marketplace add rafe-walker/cc-anchor#v0.6.0 --scope user|project
 claude plugin install kronicle-lite@isokron-plugins       --scope user|project
 claude plugin install cc-anchor@cc-anchor                 --scope user|project
 claude plugin install sea-lite@isokron-plugins            --scope user|project   # team
 ```
 
-The plugins bring the MCP servers (`npx -y kronicle-lite@0.8.0 serve`,
+The plugins bring the MCP servers (`npx -y kronicle-lite@0.9.0 serve`,
 `npx -y sea-lite@0.6.0 serve`), the `orient` and `work-queue` skills and the
 cc-anchor hooks. `project` scope writes `.claude/settings.json`, which
 teammates are prompted to accept.
@@ -32,14 +32,15 @@ teammates are prompted to accept.
 cc-anchor's hooks include the kronicle-lite **retraction push** (after every
 tool call, retractions that landed since the session's cursor are injected
 into the context: what the agent relied on, what it says now, the diff) and
-the **pulse** (before `deploy|migrate|publish|release|git push|terraform
-apply|kubectl apply`, an unreconciled retraction denies the command; chained
-`build && deploy` calls are split). Both switch on by themselves because the
+the **pulse** (while a change is pending for the agent's kronicle-lite actor,
+or the store fails integrity, only read-only Bash calls run; nothing pending,
+nothing denied). Both switch on by themselves because the
 kronicle-lite plugin is enabled; nothing to configure. The hooks run the
-kronicle-lite CLI that `npx -y kronicle-lite@0.8.0 serve` leaves in the npx
+kronicle-lite CLI that `npx -y kronicle-lite@0.9.0 serve` leaves in the npx
 cache. Tune or switch off in `.claude/cc-anchor.json` (`push`, `pulse`,
-`pulse_mode: warn`, `pulse_chain: check`, `pulse_match`). The sea-lite lease
-heartbeat is on by default once the session holds claims.
+`pulse_mode: warn`; `pulse_match` and `pulse_chain` are ignored since
+cc-anchor 0.5.1). The sea-lite lease heartbeat is on by default once the
+session holds claims; each run is bounded by `heartbeat_timeout` (10 s).
 
 team: `.claude/cc-anchor.json` gets `{"claim_guard": true, "scope_guard": true}`
 (Stop blocked once while a sea-lite claim is live; Edit/Write inside another
@@ -53,7 +54,7 @@ Optional, not done by the installer because it edits `~/.claude/settings.json`:
 
 Not scriptable. Customize > Plugins > **Add marketplace** >
 `rafe-walker/isokron-plugins` > select **kronicle-lite** > **Install** (and
-**sea-lite** for team). Repeat **Add marketplace** with `rafe-walker/cc-anchor#v0.5.0`.
+**sea-lite** for team). Repeat **Add marketplace** with `rafe-walker/cc-anchor#v0.6.0`.
 Source: claude.com/docs/cowork/guide/plugins.
 
 ## Cursor
@@ -63,7 +64,7 @@ Source: claude.com/docs/cowork/guide/plugins.
 ```json
 {
   "mcpServers": {
-    "kronicle-lite": { "command": "npx", "args": ["-y", "kronicle-lite@0.8.0", "serve", "--actor", "cursor"] },
+    "kronicle-lite": { "command": "npx", "args": ["-y", "kronicle-lite@0.9.0", "serve", "--actor", "cursor"] },
     "sea-lite": {
       "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.6.0", "serve", "--actor", "cursor"],
       "env": { "KRONICLE_LITE_DATA_DIR": "${userHome}/.kronicle-lite" }
@@ -91,7 +92,7 @@ Codex reads that only in a trusted project). Appended as marked blocks:
 # isokron:begin kronicle-lite (added by isokron-setup; its uninstall removes this block)
 [mcp_servers.kronicle-lite]
 command = "npx"
-args = ["-y", "kronicle-lite@0.8.0", "serve", "--actor", "codex"]
+args = ["-y", "kronicle-lite@0.9.0", "serve", "--actor", "codex"]
 # isokron:end kronicle-lite
 
 # isokron:begin sea-lite (…)
@@ -117,7 +118,7 @@ VS Code agent mode, `.vscode/mcp.json` (VS Code format, top-level `servers`):
 
 ```json
 { "servers": {
-  "kronicle-lite": { "type": "stdio", "command": "npx", "args": ["-y", "kronicle-lite@0.8.0", "serve", "--actor", "copilot"] },
+  "kronicle-lite": { "type": "stdio", "command": "npx", "args": ["-y", "kronicle-lite@0.9.0", "serve", "--actor", "copilot"] },
   "sea-lite":      { "type": "stdio", "command": "npx", "args": ["-y", "sea-lite@0.6.0", "serve", "--actor", "copilot"] }
 } }
 ```
@@ -130,7 +131,7 @@ GitHub recommends):
 ```json
 { "mcpServers": {
   "kronicle-lite": { "type": "local", "command": "npx",
-    "args": ["-y", "kronicle-lite@0.8.0", "serve", "--actor", "copilot"],
+    "args": ["-y", "kronicle-lite@0.9.0", "serve", "--actor", "copilot"],
     "tools": ["get_system_state", "audit_assumptions", "recall", "verify", "verify_chain"] }
 } }
 ```
@@ -151,7 +152,7 @@ hermes-agent.nousresearch.com/docs/user-guide/features/mcp and
 mcp_servers:
   kronicle-lite:
     command: "npx"
-    args: ["-y", "kronicle-lite@0.8.0", "serve", "--actor", "hermes"]
+    args: ["-y", "kronicle-lite@0.9.0", "serve", "--actor", "hermes"]
     env:
       KRONICLE_LITE_DATA_DIR: "${KRONICLE_LITE_DATA_DIR}"
     connect_timeout: 120
