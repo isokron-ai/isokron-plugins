@@ -67,12 +67,12 @@ To change any of these, edit `plugin.json` or the README, push, re-validate.
 
 ### Data handling step
 
-Suggested answers. Both servers are identical in behavior here.
+Suggested answers. Both servers keep their data local; kronicle-lite also contacts its anchor service on two opt-in tool calls.
 
 | Question | Answer | Why |
 | --- | --- | --- |
-| Does the plugin read or store personal data? | **No** personal data by design. It stores whatever content the user writes into it, in a SQLite file on the user's own machine (`~/.kronicle-lite`). The publisher never receives it. | No network code in either server |
-| Does it send data to services other than its declared connectors? | **No.** The only outbound traffic is `npx` fetching the pinned package from the public npm registry on first launch. | Disclose the npm download explicitly; the scan flags undisclosed destinations |
+| Does the plugin read or store personal data? | **No** personal data by design. It stores whatever content the user writes into it, in a SQLite file on the user's own machine (`~/.kronicle-lite`). The publisher never receives it. | sea-lite has no outbound network code. kronicle-lite sends checkpoint roots and signatures (never document contents) to the anchor service only on `checkpoint_chain {push: true}` with a license key configured, and reads its anchor listing on `anchor_status {remote: true}` |
+| Does it send data to services other than its declared connectors? | **No.** Outbound traffic is `npx` fetching the pinned package from the public npm registry on first launch and, for kronicle-lite only, the anchor service (`https://anchor.isokron.ai` by default, `KRONICLE_ANCHOR_URL` to change it) on `checkpoint_chain {push: true}` and `anchor_status {remote: true}`. | Disclose the npm download and the anchor service explicitly; the scan flags undisclosed destinations. Both are named in the kronicle-lite README |
 | How long is data kept? | Indefinitely on the user's machine, until the user deletes `~/.kronicle-lite`. The publisher retains nothing. | |
 | Intended for people under 18? | **No** | |
 

@@ -471,6 +471,27 @@ test('install (team, all clients) merges every fixture config without losing a k
   assert.match(out.orient, /cursor_compact/);
 });
 
+test('parsePutOutput reads the put --json object and the plain-text line', () => {
+  const json = JSON.stringify({ slug: 'repo-readme', revision: 2, blocks: [], head: { seq: 7, hash: 'ab' }, stale_write_advisory: { advisory: false } }, null, 2);
+  assert.deepEqual(lib.parsePutOutput(json + '\n'), { revision: 2, seq: 7 });
+  assert.deepEqual(lib.parsePutOutput('runbook rev 1: 1 new, 0 changed, 0 removed, 0 unchanged block(s); head seq 2\n'), { revision: 1, seq: 2 });
+  assert.deepEqual(lib.parsePutOutput('repo-readme rev 3: 0 new, 1 changed, 0 removed, 4 unchanged block(s); head seq 41 (bound to README.md @ 0123456789ab)\n'), { revision: 3, seq: 41 });
+  assert.equal(lib.parsePutOutput(''), null);
+  assert.equal(lib.parsePutOutput('{"ok": true}'), null);
+  assert.equal(lib.parsePutOutput('warning: something else'), null);
+});
+
+test('install reports the revision and chain seq of each seeded document, from JSON or plain-text put output', () => {
+  for (const plain of [false, true]) {
+    const sb = fullSandbox();
+    if (plain) sb.env.FAKE_KRONICLE_PUT_PLAIN = '1';
+    const out = apply(sb, setup(sb, { clients: ['cursor'] }).p);
+    const puts = out.results.filter((r) => r.kind === 'kronicle-put');
+    assert.ok(puts.length > 0);
+    for (const r of puts) assert.match(r.detail, /^rev 1, chain seq \d+$/, `plain=${plain}: ${JSON.stringify(r)}`);
+  }
+});
+
 test('install runs the exact claude plugin commands, in order', () => {
   const sb = fullSandbox();
   apply(sb, setup(sb, { clients: ['claude-code'], profile: 'team' }).p);
@@ -607,6 +628,7 @@ test('end to end with the real kronicle-lite and cc-anchor checkouts (Cursor + C
   const out = apply(sb, setup(sb, { clients: ['cursor', 'codex'], profile: 'team', goal: 'Real run' }).p);
   assert.equal(out.ok, true, JSON.stringify(out.results.filter((r) => r.status === 'failed')));
   assert.match(out.orient, /kronicle-lite orient — head seq \d+/);
+  for (const r of out.results.filter((x) => x.kind === 'kronicle-put')) assert.match(r.detail, /^rev \d+, chain seq \d+$/, JSON.stringify(r));
   const v = await ver.verify({ root: sb.root, env: sb.env });
   assert.equal(v.ok, true, JSON.stringify(v.checks.filter((c) => !c.ok)));
   uni.uninstall({ root: sb.root, env: sb.env });

@@ -16,7 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   PINS, SOURCES, exists, isDir, readText, readJsonSafe, writeText, which, run, homeDir, sha256, tilde,
-  kronicleArgv, kronicleDataDir, catalogSnapArgv, backupOnce, mergeJsonKey, mergeTomlBlock, upsertMarkedBlock, missingParents,
+  kronicleArgv, kronicleDataDir, parsePutOutput, catalogSnapArgv, backupOnce, mergeJsonKey, mergeTomlBlock, upsertMarkedBlock, missingParents,
   loadManifest, saveManifest, recordChange,
 } from './lib.mjs';
 import { detect, plan, planText, parseArgs, choicesFromFlags } from './detect.mjs';
@@ -209,10 +209,10 @@ export function applyPlan(p, { env = process.env, log = () => {}, claudeBin } = 
           const dataDir = kronicleDataDir(env);
           recordChange(m, { type: 'kronicle-store', dir: dataDir, created: !exists(dataDir) });
           const argv = kronicleArgv(env);
-          const r = run(argv[0], [...argv.slice(1), 'put', a.slug, a.file, '--title', a.title], { cwd: root, env: kronicleEnv(env), timeout: 300000 });
+          const r = run(argv[0], [...argv.slice(1), 'put', a.slug, a.file, '--title', a.title, '--json'], { cwd: root, env: kronicleEnv(env), timeout: 300000 });
           if (r.code !== 0) { done(a, 'failed', r.stderr.trim().split('\n').slice(-2).join(' ')); break; }
-          let rev = '?';
-          try { const j = JSON.parse(r.stdout); rev = `rev ${j.revision}, chain seq ${j.head?.seq}`; } catch { /* keep going */ }
+          const put = parsePutOutput(r.stdout);
+          const rev = put ? `rev ${put.revision}, chain seq ${put.seq}` : '?';
           recordChange(m, { type: 'kronicle-doc', slug: a.slug, file: path.relative(root, a.file), sha256: h });
           done(a, 'added', rev);
           break;
