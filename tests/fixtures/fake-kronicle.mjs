@@ -17,7 +17,10 @@ if (cmd === 'put') {
   const prev = s.docs[slug];
   s.docs[slug] = { content: fs.readFileSync(file, 'utf8'), revision: (prev?.revision || 0) + 1 };
   save(s);
-  console.log(JSON.stringify({ slug, revision: s.docs[slug].revision, head: { seq: s.seq } }));
+  // As the real CLI: a pretty JSON object with --json, else one plain-text line.
+  // FAKE_KRONICLE_PUT_PLAIN=1 prints the plain line even with --json.
+  if (argv.includes('--json') && !process.env.FAKE_KRONICLE_PUT_PLAIN) console.log(JSON.stringify({ slug, revision: s.docs[slug].revision, head: { seq: s.seq } }, null, 2));
+  else console.log(`${slug} rev ${s.docs[slug].revision}: 1 new, 0 changed, 0 removed, 0 unchanged block(s); head seq ${s.seq}`);
   process.exit(0);
 }
 if (cmd === 'orient') {

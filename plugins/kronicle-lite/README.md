@@ -15,11 +15,14 @@ It is one process, one file, no accounts. It is **not** a memory server; it sits
 
 ### Tools exposed by the server
 
-Read-only (`readOnlyHint: true`): `get_system_state`, `audit_assumptions`, `recall`, `verify`, `verify_chain`.
-Append-only writes (`readOnlyHint: false`, `destructiveHint: false`): `checkpoint_chain`, `put_document`, `supersede_block`.
-Destructive (`destructiveHint: true`): `tombstone_block` retires a block (the chain keeps the history; nothing is deleted from disk).
+Read-only (`readOnlyHint: true`): `get_system_state`, `audit_assumptions`, `recall`, `verify`, `verify_chain`, `anchor_status`, `audit_query`.
+Append-only writes (`readOnlyHint: false`, `destructiveHint: false`): `checkpoint_chain`, `put_document`, `supersede_block`, `audit_record`.
+Destructive (`destructiveHint: true`): `tombstone_block` retires a block (the chain keeps the history; nothing is deleted from disk). `apply` runs up to 50 put / supersede / tombstone operations in one transaction, with a `dry_run` preview.
 
-Every tool sets a `title` and MCP annotations; `openWorldHint` is `false` on all of them because the server never leaves the machine.
+- `anchor_status`: the last off-box anchor and whether the local chain still matches it; `remote: true` also asks the anchor service.
+- `audit_record` / `audit_query`: append MCP-audit evidence (catalog snapshots, measured calls, findings, gate results, fixes, regressions) to the chain and query it by audit id or catalog fingerprint.
+
+Every tool sets a `title` and MCP annotations. `openWorldHint` is `true` on `checkpoint_chain` and `anchor_status`, the two tools that can contact the anchor service, and `false` on the other eleven.
 
 ## Install
 
@@ -50,8 +53,12 @@ npx -y kronicle-lite@0.10.0 verify-chain
 ## What it runs, stores and sends
 
 - **Runs**: the `kronicle-lite` npm package at the exact version pinned in `.mcp.json`. `npx` downloads it from the public npm registry the first time and caches it. Its native dependency is `better-sqlite3`.
-- **Stores**: a SQLite database (`kronicle-lite.db`), an Ed25519 signing key (`signing-key.pem`, mode 0600) and a cursor HMAC secret (`cursor-secret`, mode 0600) in `~/.kronicle-lite`, or in `$KRONICLE_LITE_DATA_DIR` if set. Only what you put into it is stored there.
-- **Sends**: nothing. The server has no network code, no telemetry, and no accounts. All data stays on the local machine.
+- **Stores**: a SQLite database (`kronicle-lite.db`), an Ed25519 signing key (`signing-key.pem`, mode 0600), a cursor HMAC secret (`cursor-secret`, mode 0600) and `config.json` (anchor service URL and optional license key, mode 0600) in `~/.kronicle-lite`, or in `$KRONICLE_LITE_DATA_DIR` if set. After an anchor call it also keeps the service key list (`anchor-keys.cache.json`, mode 0600) and the countersigned receipts.
+- **Sends**: only on two tool calls, to the anchor service (`https://anchor.isokron.ai` by default; `KRONICLE_ANCHOR_URL` or `anchor_url` in `config.json` to change it; `http://` is refused except on loopback):
+  - `checkpoint_chain` with `push: true`, when a license key is configured: the checkpoint (chain id, sequence range, leaf count, Merkle root, key id, signature) and the chain's Ed25519 public key, with the license key as a bearer token. It first fetches the service key list (`/.well-known/anchor-keys.json`).
+  - `anchor_status` with `remote: true`, once the chain has an anchor: reads this chain's anchor listing (`/v1/chains/<chain_id>`) and the service key list. The request carries the chain id only.
+
+  Document contents, block text and event payloads never leave the machine: the service receives the root and its signature, not the leaves. Every other tool is local only. No telemetry.
 
 ## Configuration
 
@@ -61,6 +68,8 @@ The server inherits Claude Code's environment, so set these in your shell or set
 | --- | --- | --- |
 | `KRONICLE_LITE_DATA_DIR` | `~/.kronicle-lite` | Where the database and keys live. Point sea-lite at the same directory to share one chain |
 | `KRONICLE_LITE_ACTOR` | `local-agent` | Actor label recorded on cursors and writes |
+| `KRONICLE_ANCHOR_URL` | `https://anchor.isokron.ai` | Anchor service used by `checkpoint_chain` (`push: true`) and `anchor_status` (`remote: true`) |
+| `KRONICLE_ANCHOR_KEY` | unset | Anchor service license key; without it `push: true` sends nothing |
 
 ## Skill source
 

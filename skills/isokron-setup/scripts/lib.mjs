@@ -100,6 +100,20 @@ export function kronicleArgv(env = process.env) {
   if (b) return b.endsWith('.js') || b.endsWith('.mjs') ? [process.execPath, b] : [b];
   return ['npx', '-y', `kronicle-lite@${PINS.kronicle}`];
 }
+/**
+ * The revision and chain head from `kronicle-lite put` output: the `--json`
+ * object, or the plain-text line `<slug> rev N: … head seq M` that a CLI
+ * printing no JSON writes. null when neither is found.
+ */
+export function parsePutOutput(stdout) {
+  const text = String(stdout ?? '').trim();
+  try {
+    const j = JSON.parse(text);
+    if (Number.isInteger(j?.revision) && Number.isInteger(j?.head?.seq)) return { revision: j.revision, seq: j.head.seq };
+  } catch { /* plain text */ }
+  const m = text.match(/\brev (\d+):[^\n]*?\bhead seq (\d+)/);
+  return m ? { revision: Number(m[1]), seq: Number(m[2]) } : null;
+}
 export function kronicleDataDir(env = process.env) {
   return env.KRONICLE_LITE_DATA_DIR || path.join(homeDir(env), '.kronicle-lite');
 }
