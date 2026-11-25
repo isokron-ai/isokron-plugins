@@ -40,7 +40,16 @@ If you are about to act on (5) or (6) without (1)–(3) confirming, stop and re-
 7. **Answer the open questions first.** If `anchor read` lists `OPEN QUESTIONS`,
    put them to the operator before doing work those answers would invalidate.
 8. **Set the anchor for this session** — `anchor set issue "#N"`,
-   `anchor set phase <...>`, `anchor set inflight <...>`.
+   `anchor set phase <...>`, `anchor set inflight <...>`. These write to your
+   **lane** (this repo, or `ANCHOR_LANE`), not to the whole thing.
+
+### If the brief shows other lanes
+
+A thing that spans firmware, hardware and software has a lane per strand.
+`ELSEWHERE ON THIS THING` is context so you do not contradict work happening
+beside you — a constraint from another lane is real and binding. It is **not**
+work to pick up: stay in your lane and your issue. If another lane's position
+makes your issue impossible, say so and raise it rather than crossing over.
 
 Do not re-derive what the brief already states. Do not re-explore the codebase to
 rebuild a picture the brief gives you — that re-exploration is the cost this whole

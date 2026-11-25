@@ -135,10 +135,15 @@ def load(p):
         return {}
 r,l=load(sys.argv[1]),load(sys.argv[2])
 m=dict(r)
-for k in ('goal','issue','branch','phase','inflight','updated'):
-    v=l.get(k)
-    if v: m[k]=v
-if l.get('next'): m['next']=l['next']
+m['v']=2
+if l.get('goal'): m['goal']=l['goal']
+m['updated']=max(r.get('updated') or '', l.get('updated') or '')
+lanes=dict(r.get('lanes') or {})
+for k,v in (l.get('lanes') or {}).items():
+    cur=lanes.get(k)
+    if not cur or (v.get('updated') or '') >= (cur.get('updated') or ''):
+        lanes[k]=v
+m['lanes']=lanes
 for k in ('gotchas','questions'):
     out=list(r.get(k) or [])
     for v in (l.get(k) or []):
@@ -225,9 +230,37 @@ fetch_state() {
 
 # ---------- state document ----------
 
-STATE_JSON_DEFAULT='{"goal":"","issue":"","branch":"","phase":"","inflight":"","next":[],"gotchas":[],"questions":[],"updated":""}'
+STATE_JSON_DEFAULT='{"v":2,"goal":"","gotchas":[],"questions":[],"lanes":{},"updated":""}'
 
-load_state() { local s; s="$(state_cat anchor.json)"; [ -n "$s" ] && printf '%s' "$s" || printf '%s' "$STATE_JSON_DEFAULT"; }
+# A lane is one strand of work on this thing. Default: the repo you are in.
+# Override per repo with "lane" in .anchor.json, or per session with
+# ANCHOR_LANE, when one repo splits into firmware / hardware / software.
+lane_name() {
+  if [ -n "${ANCHOR_LANE:-}" ]; then printf '%s' "$ANCHOR_LANE"; return 0; fi
+  local l; l="$(cfg_get lane)"
+  if [ -n "$l" ]; then printf '%s' "$l"; else repo_name; fi
+}
+
+load_state() {
+  local s; s="$(state_cat anchor.json)"
+  [ -n "$s" ] || s="$STATE_JSON_DEFAULT"
+  printf '%s' "$s" | "$PY" -I -c "
+import json,sys
+try: d=json.load(sys.stdin)
+except Exception: d={}
+if not isinstance(d,dict): d={}
+d.setdefault('goal',''); d.setdefault('gotchas',[]); d.setdefault('questions',[])
+d.setdefault('lanes',{}); d.setdefault('updated','')
+if d.get('v')!=2:
+    lane=d.pop('repo','') or sys.argv[1]
+    old={k:d.pop(k) for k in ('issue','branch','phase','inflight','next') if k in d}
+    if any(old.values()):
+        old.setdefault('next',[]); old['updated']=d.get('updated','')
+        d['lanes'][lane]=old
+    d['v']=2
+json.dump(d,sys.stdout,ensure_ascii=False)
+" "$(lane_name)"
+}
 
 # mutate_state <python-expression-file-free-form> : reads JSON on stdin, writes JSON on stdout
 # Called as: load_state | py_mutate "<code>" arg1 arg2 ...
@@ -246,7 +279,7 @@ json.dump(d,sys.stdout,indent=2,ensure_ascii=False)
 write_state() {           # stdin = new anchor.json content
   local msg="$1"
   local tmp; tmp="$(mktemp -t anchor-state.XXXXXX)"
-  py_mutate "d['repo']=args[0]" "$(repo_name)" > "$tmp"
+  cat > "$tmp"
   local md; md="$(mktemp -t anchor-md.XXXXXX)"
   render_brief "$(cat "$tmp")" --full > "$md"
   commit_state "$msg" anchor.json "$tmp" STATE.md "$md"
@@ -297,34 +330,56 @@ for e in rows:
 
 render_brief() {          # render_brief <json> [--full]
   local json="$1" full="${2:-}"
-  local board owner
-  board="$(cfg_get board)"; owner="$(cfg_get owner)"
   printf '%s' "$json" | "$PY" -I -c "
-import json,sys
+import json,sys,datetime
 d=json.load(sys.stdin)
+lane=sys.argv[1]
 def line(k,v):
     if v: print('%-9s %s' % (k+':', v))
+def age(ts):
+    try:
+        t=datetime.datetime.strptime(ts,'%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=datetime.timezone.utc)
+    except Exception:
+        return '?'
+    n=int((datetime.datetime.now(datetime.timezone.utc)-t).total_seconds())
+    if n < 90: return 'just now'
+    if n < 5400: return '%dm ago' % (n//60)
+    if n < 172800: return '%dh ago' % (n//3600)
+    return '%dd ago' % (n//86400)
+lanes=d.get('lanes') or {}
+me=lanes.get(lane) or {}
 print('=== ANCHOR ===')
 line('goal', d.get('goal'))
-line('issue', d.get('issue'))
-line('branch', d.get('branch'))
-line('phase', d.get('phase'))
-line('inflight', d.get('inflight'))
-line('repo', d.get('repo'))
-line('updated', d.get('updated'))
-nx=d.get('next') or []
+if len(lanes) > 1: print('')
+if len(lanes) > 1: print('--- this lane: %s ---' % lane)
+line('issue', me.get('issue'))
+line('branch', me.get('branch'))
+line('phase', me.get('phase'))
+line('inflight', me.get('inflight'))
+line('updated', me.get('updated') or d.get('updated'))
+nx=me.get('next') or []
 if nx:
-    print('\nNEXT (in order):')
-    for i,s in enumerate(nx,1): print('  %d. %s' % (i,s))
+    print('')
+    print('NEXT (in order):')
+    for i,v in enumerate(nx,1): print('  %d. %s' % (i,v))
+others=[(k,v) for k,v in sorted(lanes.items()) if k != lane]
+if others:
+    print('')
+    print('ELSEWHERE ON THIS THING (context, not yours to resume):')
+    for k,v in others:
+        print('  %-20s %-6s %s  (%s)' % (k[:20], v.get('issue') or '-',
+              (v.get('inflight') or '-')[:58], age(v.get('updated',''))))
 g=d.get('gotchas') or []
 if g:
-    print('\nGOTCHAS (constraints, not suggestions):')
-    for s in g: print('  ! %s' % s)
+    print('')
+    print('GOTCHAS (constraints, not suggestions):')
+    for v in g: print('  ! %s' % v)
 q=d.get('questions') or []
 if q:
-    print('\nOPEN QUESTIONS (needs the operator):')
-    for i,s in enumerate(q,1): print('  ?%d %s' % (i,s))
-"
+    print('')
+    print('OPEN QUESTIONS (needs the operator):')
+    for i,v in enumerate(q,1): print('  ?%d %s' % (i,v))
+" "$(lane_name)"
   local log; log="$(recent_log 8)"
   if [ -n "$log" ]; then printf '\nRECENT (newest last):\n%s\n' "$log"; fi
   if [ -n "$full" ]; then
@@ -370,11 +425,21 @@ cmd_read() {
   render_brief "$(load_state)" "$full"
 }
 
+NOW_PY="datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')"
+
 cmd_set() {
   [ "$#" -ge 2 ] || die "set <goal|issue|branch|phase|inflight> <value>"
   local field="$1"; shift
-  case "$field" in goal|issue|branch|phase|inflight) ;; *) die "set: unknown field $field";; esac
-  load_state | py_mutate "d[args[0]]=args[1]" "$field" "$*" | write_state "anchor: set $field"
+  case "$field" in
+    goal)
+      load_state | py_mutate "d['goal']=args[0]" "$*" | write_state "anchor: set goal";;
+    issue|branch|phase|inflight)
+      load_state | py_mutate "
+ln=d['lanes'].setdefault(args[0],{})
+ln[args[1]]=args[2]
+ln['updated']=$NOW_PY" "$(lane_name)" "$field" "$*" | write_state "anchor: set $field";;
+    *) die "set: unknown field $field";;
+  esac
   push_state
 }
 
@@ -389,7 +454,10 @@ cmd_mark() {
 
 cmd_next() {
   [ "$#" -ge 1 ] || die "next <step> [<step>...]"
-  load_state | py_mutate "d['next']=list(args)" "$@" | write_state "anchor: next steps"
+  load_state | py_mutate "
+ln=d['lanes'].setdefault(args[0],{})
+ln['next']=list(args[1:])
+ln['updated']=$NOW_PY" "$(lane_name)" "$@" | write_state "anchor: next steps"
   push_state
 }
 
@@ -424,10 +492,16 @@ cmd_wrap() {
   # refresh branch field from reality
   local cur; cur="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')"
   local dirty; dirty="$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
-  st="$(printf '%s' "$st" | py_mutate "d['branch']=args[0]" "$cur")"
+  st="$(printf '%s' "$st" | py_mutate "
+ln=d['lanes'].setdefault(args[0],{})
+ln['branch']=args[1]
+ln['updated']=$NOW_PY" "$(lane_name)" "$cur")"
   printf '%s' "$st" | write_state "anchor: wrap"
   push_state
-  local issue; issue="$(printf '%s' "$st" | "$PY" -I -c "import json,sys;print(json.load(sys.stdin).get('issue') or '')")"
+  local issue; issue="$(printf '%s' "$st" | "$PY" -I -c "
+import json,sys
+print(((json.load(sys.stdin).get('lanes') or {}).get(sys.argv[1]) or {}).get('issue') or '')
+" "$(lane_name)")"
   local brief; brief="$(render_brief "$st")"
   printf '%s\n' "$brief"
   printf '\nuncommitted files: %s\n' "$dirty"
@@ -533,7 +607,7 @@ cmd_doctor() {
   else
     printf 'state ->  %s (shared home for this thing)\n' "$REMOTE"
   fi
-  printf 'repo      %s\n' "$(repo_name)"
+  printf 'lane      %s\n' "$(lane_name)"
   printf 'python    %s\n' "$($PY -V 2>&1)"
   printf 'gh        %s\n' "$(have gh && gh --version 2>/dev/null | head -1 || echo 'MISSING (board + issue features off)')"
   printf 'board     %s owner=%s\n' "$(cfg_get board '(unset)')" "$(cfg_get owner '(unset)')"

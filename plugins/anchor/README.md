@@ -98,6 +98,39 @@ came from, and `anchor read` tags them when more than one is present:
 Without `--state-remote` each repo keeps its own state branch, which is what you
 want when the repos are unrelated.
 
+### Lanes
+
+A shared state home needs more than one position, because firmware, hardware and
+software move independently. Each strand is a **lane**, and each lane keeps its own
+`issue`, `branch`, `phase`, `inflight` and `next`. `goal`, `gotchas` and
+`questions` stay shared, since those are properties of the thing.
+
+The lane defaults to the repo name, so a many-repo thing gets lanes for free. For
+one repo that splits into strands, set `"lane"` in `.anchor.json` or pass
+`ANCHOR_LANE=bootloader` for a session.
+
+`anchor read` shows your lane in full and the others as one line each:
+
+```
+--- this lane: firmware ---
+issue:    #58
+inflight: DFU bootloader flashes, CRC check not written
+
+NEXT (in order):
+  1. write CRC check
+
+ELSEWHERE ON THIS THING (context, not yours to resume):
+  hardware   #61   Rev A board back from fab, shunt footprint wrong  (2h ago)
+  software   #64   telemetry parser done, no reconnect handling      (20m ago)
+```
+
+That framing is deliberate: the other lanes are there so a session does not
+contradict work happening beside it, not so it picks that work up. Lanes also make
+the merge nearly conflict-free — two sessions in different lanes touch different
+keys, so there is nothing to resolve.
+
+With one repo and one lane, none of this shows and the output is unchanged.
+
 ## Two sessions at once
 
 Concurrent writers merge rather than diverge. If two sessions (two machines, two
