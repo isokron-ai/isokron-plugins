@@ -1,0 +1,645 @@
+#!/usr/bin/env bash
+# anchor — write-through session state on a git orphan branch.
+#
+# State lives on refs/heads/agent-state and is written with git plumbing,
+# so the working tree and index are NEVER touched. Safe to run mid-edit,
+# mid-rebase, mid-anything.
+#
+#   anchor init [--board N] [--owner O]   create the state branch + config
+#   anchor read [--full]                  print the resume brief (cheap)
+#   anchor set <field> <value>            goal|issue|branch|inflight|phase
+#   anchor mark <kind> <text>             decision|done|blocked|deadend|note
+#   anchor next <text> [<text>...]        replace the next-steps list
+#   anchor gotcha <text>                  append a durable gotcha
+#   anchor ask <text>                     append an open question
+#   anchor resolve <n>                    drop open question n
+#   anchor wrap [--status S]              full checkpoint: push + issue comment + board
+#   anchor board ready|status|note        GitHub Projects v2 helpers
+#   anchor doctor                         check prerequisites
+#
+# Config: .anchor.json at repo root (committed). Env overrides:
+#   ANCHOR_REF (default refs/heads/agent-state), ANCHOR_REMOTE (default origin)
+
+set -euo pipefail
+
+REF="${ANCHOR_REF:-refs/heads/agent-state}"
+BRANCH="${REF#refs/heads/}"
+REMOTE="origin"   # resolved properly in resolve_remote(), after config is readable
+LOG_KINDS="decision done blocked deadend note"
+
+die() { printf 'anchor: %s\n' "$*" >&2; exit 1; }
+have() { command -v "$1" >/dev/null 2>&1; }
+
+PY=""
+pick_py() {
+  for c in python3 python; do have "$c" && { PY="$c"; return 0; }; done
+  die "python3 not found (needed for state JSON). Install Xcode CLT: xcode-select --install"
+}
+
+repo_root() {
+  git rev-parse --show-toplevel 2>/dev/null || die "not inside a git repository"
+}
+
+ROOT="$(repo_root)"
+cd "$ROOT"
+
+# Which repo this write came from. Matters when several repos of one "thing"
+# share a state home: the brief has to say where each entry happened.
+repo_name() {
+  local u; u="$(git remote get-url origin 2>/dev/null || true)"
+  [ -n "$u" ] || u="$ROOT"
+  u="${u%.git}"; u="${u%/}"
+  printf '%s' "${u##*/}"
+}
+
+cfg_get() {
+  local key="$1" def="${2:-}"
+  [ -f "$ROOT/.anchor.json" ] || { printf '%s' "$def"; return 0; }
+  "$PY" -I -c "
+import json,sys
+path,key,default=sys.argv[1],sys.argv[2],sys.argv[3]
+try:
+    d=json.load(open(path))
+except Exception:
+    d={}
+v=d.get(key) or default
+sys.stdout.write('' if v is None else str(v))
+" "$ROOT/.anchor.json" "$key" "$def"
+}
+
+# ---------- orphan-branch plumbing ----------
+
+ref_exists() { git rev-parse -q --verify "$REF" >/dev/null 2>&1; }
+
+# read a path from the state branch; empty if absent
+state_cat() {
+  local path="$1"
+  ref_exists || return 0
+  git cat-file -p "$REF:$path" 2>/dev/null || true
+}
+
+# commit_state <message> <path1> <tmpfile1> [<path2> <tmpfile2> ...]
+# Builds a tree from the existing state tree plus the given files and
+# advances $REF. Never touches the real index or working tree.
+commit_state() {
+  local msg="$1"; shift
+  local idx; idx="$(mktemp -t anchor-idx.XXXXXX)"
+  rm -f "$idx"
+  local parent=""
+  (
+    export GIT_INDEX_FILE="$idx"
+    if ref_exists; then
+      parent="$(git rev-parse "$REF")"
+      git read-tree "$REF"
+    fi
+    while [ "$#" -ge 2 ]; do
+      local path="$1" file="$2"; shift 2
+      local blob; blob="$(git hash-object -w --stdin < "$file")"
+      git update-index --add --cacheinfo "100644,$blob,$path"
+    done
+    local tree; tree="$(git write-tree)"
+    local commit
+    if [ -n "$parent" ]; then
+      commit="$(git commit-tree "$tree" -p "$parent" -m "$msg")"
+    else
+      commit="$(git commit-tree "$tree" -m "$msg")"
+    fi
+    git update-ref "$REF" "$commit"
+  )
+  rm -f "$idx"
+}
+
+TMPREF="refs/anchor/remote"
+
+# Merge a diverged remote tip with ours into a two-parent commit.
+# The log is append-only NDJSON so it unions cleanly; anchor.json takes our
+# scalars (last writer wins) and unions the gotcha / question lists.
+merge_state() {
+  local rtip="$1" ltip="$2"
+  local idx tmpd paths blob tree commit
+  idx="$(mktemp -t anchor-midx.XXXXXX)"; rm -f "$idx"
+  tmpd="$(mktemp -d -t anchor-merge.XXXXXX)"
+  paths="$( { git ls-tree -r --name-only "$rtip" 2>/dev/null; git ls-tree -r --name-only "$ltip" 2>/dev/null; } | grep '^log/' | sort -u )"
+  (
+    export GIT_INDEX_FILE="$idx"
+    git read-tree "$rtip"
+    git cat-file -p "$rtip:anchor.json" > "$tmpd/r.json" 2>/dev/null || printf '{}' > "$tmpd/r.json"
+    git cat-file -p "$ltip:anchor.json" > "$tmpd/l.json" 2>/dev/null || printf '{}' > "$tmpd/l.json"
+    "$PY" -I -c "
+import json,sys
+def load(p):
+    try:
+        d=json.load(open(p))
+        return d if isinstance(d,dict) else {}
+    except Exception:
+        return {}
+r,l=load(sys.argv[1]),load(sys.argv[2])
+m=dict(r)
+m['v']=2
+if l.get('goal'): m['goal']=l['goal']
+m['updated']=max(r.get('updated') or '', l.get('updated') or '')
+lanes=dict(r.get('lanes') or {})
+for k,v in (l.get('lanes') or {}).items():
+    cur=lanes.get(k)
+    if not cur or (v.get('updated') or '') >= (cur.get('updated') or ''):
+        lanes[k]=v
+m['lanes']=lanes
+for k in ('gotchas','questions'):
+    out=list(r.get(k) or [])
+    for v in (l.get(k) or []):
+        if v not in out: out.append(v)
+    m[k]=out
+json.dump(m,sys.stdout,indent=2,ensure_ascii=False)
+" "$tmpd/r.json" "$tmpd/l.json" > "$tmpd/m.json"
+    blob="$(git hash-object -w --stdin < "$tmpd/m.json")"
+    git update-index --add --cacheinfo "100644,$blob,anchor.json"
+    for pth in $paths; do
+      git cat-file -p "$rtip:$pth" > "$tmpd/r.log" 2>/dev/null || : > "$tmpd/r.log"
+      git cat-file -p "$ltip:$pth" > "$tmpd/l.log" 2>/dev/null || : > "$tmpd/l.log"
+      "$PY" -I -c "
+import json,sys
+seen=set(); out=[]
+for p in sys.argv[1:3]:
+    try: fh=open(p)
+    except Exception: continue
+    for line in fh:
+        line=line.strip()
+        if not line or line in seen: continue
+        seen.add(line); out.append(line)
+def when(l):
+    try: return json.loads(l).get('t','')
+    except Exception: return ''
+out.sort(key=when)
+sys.stdout.write('\n'.join(out)+('\n' if out else ''))
+" "$tmpd/r.log" "$tmpd/l.log" > "$tmpd/m.log"
+      blob="$(git hash-object -w --stdin < "$tmpd/m.log")"
+      git update-index --add --cacheinfo "100644,$blob,$pth"
+    done
+    tree="$(git write-tree)"
+    commit="$(git commit-tree "$tree" -p "$rtip" -p "$ltip" -m 'anchor: merge concurrent sessions')"
+    git update-ref "$REF" "$commit"
+  )
+  rm -rf "$tmpd" "$idx"
+}
+
+# Bring $REF up to date with the remote, merging if both moved.
+# Returns 0 when local is at or ahead of the remote tip.
+sync_state() {
+  git fetch -q "$REMOTE" "+$REF:$TMPREF" 2>/dev/null || return 1
+  git rev-parse -q --verify "$TMPREF" >/dev/null 2>&1 || return 0
+  local rtip ltip
+  rtip="$(git rev-parse "$TMPREF")"
+  if ! ref_exists; then git update-ref "$REF" "$rtip"; return 0; fi
+  ltip="$(git rev-parse "$REF")"
+  [ "$rtip" = "$ltip" ] && return 0
+  if git merge-base --is-ancestor "$ltip" "$rtip" 2>/dev/null; then
+    git update-ref "$REF" "$rtip"; return 0          # we were behind: fast-forward
+  fi
+  if git merge-base --is-ancestor "$rtip" "$ltip" 2>/dev/null; then
+    return 0                                          # we are ahead: nothing to merge
+  fi
+  merge_state "$rtip" "$ltip"                         # diverged: replay both
+  printf 'anchor: merged a concurrent session'"'"'s state\n' >&2
+}
+
+push_state() {
+  local i=0
+  while [ "$i" -lt 3 ]; do
+    if git push -q "$REMOTE" "$REF:$REF" 2>/dev/null; then
+      [ "$i" -gt 0 ] && render_state_md
+      return 0
+    fi
+    sync_state || break
+    i=$((i + 1))
+  done
+  printf 'anchor: warning — push to %s failed; state is committed locally on %s\n' "$REMOTE" "$BRANCH" >&2
+}
+
+# Recompute STATE.md from whatever anchor.json + logs are now on $REF.
+render_state_md() {
+  local md; md="$(mktemp -t anchor-md.XXXXXX)"
+  render_brief "$(load_state)" --full > "$md"
+  commit_state "anchor: refresh STATE.md" STATE.md "$md"
+  rm -f "$md"
+  git push -q "$REMOTE" "$REF:$REF" 2>/dev/null || true
+}
+
+fetch_state() {
+  sync_state || true
+}
+
+# ---------- state document ----------
+
+STATE_JSON_DEFAULT='{"v":2,"goal":"","gotchas":[],"questions":[],"lanes":{},"updated":""}'
+
+# A lane is one strand of work on this thing. Default: the repo you are in.
+# Override per repo with "lane" in .anchor.json, or per session with
+# ANCHOR_LANE, when one repo splits into firmware / hardware / software.
+lane_name() {
+  if [ -n "${ANCHOR_LANE:-}" ]; then printf '%s' "$ANCHOR_LANE"; return 0; fi
+  local l; l="$(cfg_get lane)"
+  if [ -n "$l" ]; then printf '%s' "$l"; else repo_name; fi
+}
+
+load_state() {
+  local s; s="$(state_cat anchor.json)"
+  [ -n "$s" ] || s="$STATE_JSON_DEFAULT"
+  printf '%s' "$s" | "$PY" -I -c "
+import json,sys
+try: d=json.load(sys.stdin)
+except Exception: d={}
+if not isinstance(d,dict): d={}
+d.setdefault('goal',''); d.setdefault('gotchas',[]); d.setdefault('questions',[])
+d.setdefault('lanes',{}); d.setdefault('updated','')
+if d.get('v')!=2:
+    lane=d.pop('repo','') or sys.argv[1]
+    old={k:d.pop(k) for k in ('issue','branch','phase','inflight','next') if k in d}
+    if any(old.values()):
+        old.setdefault('next',[]); old['updated']=d.get('updated','')
+        d['lanes'][lane]=old
+    d['v']=2
+json.dump(d,sys.stdout,ensure_ascii=False)
+" "$(lane_name)"
+}
+
+# mutate_state <python-expression-file-free-form> : reads JSON on stdin, writes JSON on stdout
+# Called as: load_state | py_mutate "<code>" arg1 arg2 ...
+py_mutate() {
+  local code="$1"; shift
+  "$PY" -I -c "
+import json,sys,datetime
+d=json.load(sys.stdin)
+args=sys.argv[1:]
+$code
+d['updated']=datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+json.dump(d,sys.stdout,indent=2,ensure_ascii=False)
+" "$@"
+}
+
+write_state() {           # stdin = new anchor.json content
+  local msg="$1"
+  local tmp; tmp="$(mktemp -t anchor-state.XXXXXX)"
+  cat > "$tmp"
+  local md; md="$(mktemp -t anchor-md.XXXXXX)"
+  render_brief "$(cat "$tmp")" --full > "$md"
+  commit_state "$msg" anchor.json "$tmp" STATE.md "$md"
+  rm -f "$tmp" "$md"
+}
+
+log_append() {            # log_append <kind> <text>
+  local kind="$1" text="$2"
+  local day; day="$(date -u +%Y-%m-%d)"
+  local path="log/$day.ndjson"
+  local tmp; tmp="$(mktemp -t anchor-log.XXXXXX)"
+  state_cat "$path" > "$tmp"
+  "$PY" -I -c "
+import json,sys,datetime
+print(json.dumps({'t':datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+                  'kind':sys.argv[1],'text':sys.argv[2],'repo':sys.argv[3]},ensure_ascii=False))
+" "$kind" "$text" "$(repo_name)" >> "$tmp"
+  local md; md="$(mktemp -t anchor-md.XXXXXX)"
+  commit_state "anchor: $kind" "$path" "$tmp"
+  render_brief "$(load_state)" --full > "$md"
+  commit_state "anchor: refresh STATE.md" STATE.md "$md"
+  rm -f "$tmp" "$md"
+}
+
+recent_log() {            # recent_log <n>
+  local n="${1:-8}"
+  ref_exists || return 0
+  local files
+  files="$(git ls-tree --name-only "$REF" log/ 2>/dev/null | sort | tail -3)"
+  [ -n "$files" ] || return 0
+  for f in $files; do git cat-file -p "$REF:$f" 2>/dev/null || true; done | tail -n "$n" \
+    | "$PY" -I -c "
+import json,sys
+rows=[]
+for line in sys.stdin:
+    line=line.strip()
+    if not line: continue
+    try: e=json.loads(line)
+    except Exception: continue
+    rows.append(e)
+repos={e.get('repo') for e in rows if e.get('repo')}
+multi=len(repos)>1
+for e in rows:
+    tag=('[%s] ' % e['repo']) if (multi and e.get('repo')) else ''
+    print('  %s  %-8s %s%s' % (e.get('t','')[5:16].replace('T',' '), e.get('kind','?'), tag, e.get('text','')))
+"
+}
+
+render_brief() {          # render_brief <json> [--full]
+  local json="$1" full="${2:-}"
+  printf '%s' "$json" | "$PY" -I -c "
+import json,sys,datetime
+d=json.load(sys.stdin)
+lane=sys.argv[1]
+def line(k,v):
+    if v: print('%-9s %s' % (k+':', v))
+def age(ts):
+    try:
+        t=datetime.datetime.strptime(ts,'%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=datetime.timezone.utc)
+    except Exception:
+        return '?'
+    n=int((datetime.datetime.now(datetime.timezone.utc)-t).total_seconds())
+    if n < 90: return 'just now'
+    if n < 5400: return '%dm ago' % (n//60)
+    if n < 172800: return '%dh ago' % (n//3600)
+    return '%dd ago' % (n//86400)
+lanes=d.get('lanes') or {}
+me=lanes.get(lane) or {}
+print('=== ANCHOR ===')
+line('goal', d.get('goal'))
+if len(lanes) > 1: print('')
+if len(lanes) > 1: print('--- this lane: %s ---' % lane)
+line('issue', me.get('issue'))
+line('branch', me.get('branch'))
+line('phase', me.get('phase'))
+line('inflight', me.get('inflight'))
+line('updated', me.get('updated') or d.get('updated'))
+nx=me.get('next') or []
+if nx:
+    print('')
+    print('NEXT (in order):')
+    for i,v in enumerate(nx,1): print('  %d. %s' % (i,v))
+others=[(k,v) for k,v in sorted(lanes.items()) if k != lane]
+if others:
+    print('')
+    print('ELSEWHERE ON THIS THING (context, not yours to resume):')
+    for k,v in others:
+        print('  %-20s %-6s %s  (%s)' % (k[:20], v.get('issue') or '-',
+              (v.get('inflight') or '-')[:58], age(v.get('updated',''))))
+g=d.get('gotchas') or []
+if g:
+    print('')
+    print('GOTCHAS (constraints, not suggestions):')
+    for v in g: print('  ! %s' % v)
+q=d.get('questions') or []
+if q:
+    print('')
+    print('OPEN QUESTIONS (needs the operator):')
+    for i,v in enumerate(q,1): print('  ?%d %s' % (i,v))
+" "$(lane_name)"
+  local log; log="$(recent_log 8)"
+  if [ -n "$log" ]; then printf '\nRECENT (newest last):\n%s\n' "$log"; fi
+  if [ -n "$full" ]; then
+    printf '\n--- authority ---\n'
+    printf 'This file is the authority for state. A compaction summary or\n'
+    printf 'recalled context NEVER outranks it. If they disagree, this wins.\n'
+  fi
+}
+
+# ---------- commands ----------
+
+cmd_init() {
+  local board="" owner="" state_remote=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --board) board="$2"; shift 2;;
+      --owner) owner="$2"; shift 2;;
+      --state-remote) state_remote="$2"; shift 2;;
+      *) die "init: unknown arg $1";;
+    esac
+  done
+  if [ ! -f "$ROOT/.anchor.json" ]; then
+    "$PY" -I -c "
+import json,sys
+cfg={'board':sys.argv[1],'owner':sys.argv[2],'ref':sys.argv[3]}
+if sys.argv[4]: cfg['state_remote']=sys.argv[4]
+json.dump(cfg,open(sys.argv[5],'w'),indent=2)
+" "$board" "$owner" "$REF" "$state_remote" "$ROOT/.anchor.json"
+    resolve_remote
+    printf 'anchor: wrote .anchor.json (commit this)\n'
+  fi
+  if ref_exists; then printf 'anchor: %s already exists\n' "$BRANCH"; else
+    load_state | write_state "anchor: init state branch"
+    push_state
+    printf 'anchor: created %s\n' "$BRANCH"
+  fi
+}
+
+cmd_read() {
+  local full=""; [ "${1:-}" = "--full" ] && full="--full"
+  fetch_state
+  ref_exists || { printf 'anchor: no state yet — run `anchor init`\n'; return 0; }
+  render_brief "$(load_state)" "$full"
+}
+
+NOW_PY="datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')"
+
+cmd_set() {
+  [ "$#" -ge 2 ] || die "set <goal|issue|branch|phase|inflight> <value>"
+  local field="$1"; shift
+  case "$field" in
+    goal)
+      load_state | py_mutate "d['goal']=args[0]" "$*" | write_state "anchor: set goal";;
+    issue|branch|phase|inflight)
+      load_state | py_mutate "
+ln=d['lanes'].setdefault(args[0],{})
+ln[args[1]]=args[2]
+ln['updated']=$NOW_PY" "$(lane_name)" "$field" "$*" | write_state "anchor: set $field";;
+    *) die "set: unknown field $field";;
+  esac
+  push_state
+}
+
+cmd_mark() {
+  [ "$#" -ge 2 ] || die "mark <$LOG_KINDS> <text>"
+  local kind="$1"; shift
+  case " $LOG_KINDS " in *" $kind "*) ;; *) die "mark: kind must be one of: $LOG_KINDS";; esac
+  log_append "$kind" "$*"
+  push_state
+  printf 'anchor: logged %s\n' "$kind"
+}
+
+cmd_next() {
+  [ "$#" -ge 1 ] || die "next <step> [<step>...]"
+  load_state | py_mutate "
+ln=d['lanes'].setdefault(args[0],{})
+ln['next']=list(args[1:])
+ln['updated']=$NOW_PY" "$(lane_name)" "$@" | write_state "anchor: next steps"
+  push_state
+}
+
+cmd_gotcha() {
+  [ "$#" -ge 1 ] || die "gotcha <text>"
+  load_state | py_mutate "d.setdefault('gotchas',[]).append(args[0])" "$*" | write_state "anchor: gotcha"
+  push_state
+}
+
+cmd_ask() {
+  [ "$#" -ge 1 ] || die "ask <text>"
+  load_state | py_mutate "d.setdefault('questions',[]).append(args[0])" "$*" | write_state "anchor: question"
+  push_state
+}
+
+cmd_resolve() {
+  [ "$#" -ge 1 ] || die "resolve <n>"
+  load_state | py_mutate "
+i=int(args[0])-1
+qs=d.get('questions') or []
+if 0<=i<len(qs): qs.pop(i)
+d['questions']=qs" "$1" | write_state "anchor: resolved question $1"
+  push_state
+}
+
+cmd_wrap() {
+  local status=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in --status) status="$2"; shift 2;; *) die "wrap: unknown arg $1";; esac
+  done
+  local st; st="$(load_state)"
+  # refresh branch field from reality
+  local cur; cur="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')"
+  local dirty; dirty="$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+  st="$(printf '%s' "$st" | py_mutate "
+ln=d['lanes'].setdefault(args[0],{})
+ln['branch']=args[1]
+ln['updated']=$NOW_PY" "$(lane_name)" "$cur")"
+  printf '%s' "$st" | write_state "anchor: wrap"
+  push_state
+  local issue; issue="$(printf '%s' "$st" | "$PY" -I -c "
+import json,sys
+print(((json.load(sys.stdin).get('lanes') or {}).get(sys.argv[1]) or {}).get('issue') or '')
+" "$(lane_name)")"
+  local brief; brief="$(render_brief "$st")"
+  printf '%s\n' "$brief"
+  printf '\nuncommitted files: %s\n' "$dirty"
+  if [ -n "$issue" ] && have gh; then
+    local n="${issue##*#}"; n="${n//[!0-9]/}"
+    if [ -n "$n" ]; then
+      printf '%s\n' "**Session checkpoint**
+
+\`\`\`
+$brief
+\`\`\`
+
+Uncommitted files at checkpoint: $dirty. Full state: \`git fetch origin $BRANCH && git show $BRANCH:STATE.md\`" \
+        | gh issue comment "$n" --body-file - >/dev/null 2>&1 \
+        && printf 'anchor: commented on issue #%s\n' "$n" \
+        || printf 'anchor: warning — could not comment on issue #%s\n' "$n" >&2
+      [ -n "$status" ] && cmd_board status "$n" "$status" || true
+    fi
+  fi
+}
+
+# ---------- GitHub Projects v2 (GraphQL-only; via gh project) ----------
+
+cmd_board() {
+  have gh || die "gh CLI not found"
+  local board owner; board="$(cfg_get board)"; owner="$(cfg_get owner)"
+  [ -n "$board" ] || die "no board configured — anchor init --board N --owner O"
+  local sub="${1:-ready}"; shift || true
+
+  gh_json() {   # gh_json <args...> -> JSON on stdout, readable error on failure
+    local out rc
+    out="$(gh "$@" 2>&1)"; rc=$?
+    case "$out" in
+      \{*|\[*) printf '%s' "$out"; return 0;;
+    esac
+    {
+      printf 'anchor: board call failed (gh %s, exit %s)\n' "$2" "$rc"
+      printf '%s\n' "$out" | head -3
+      printf 'anchor: check `gh auth status`; that project %s belongs to owner %s;\n' "$board" "$owner"
+      printf '        and that the token has the project scope: gh auth refresh -s project\n'
+    } >&2
+    return 1
+  }
+
+  case "$sub" in
+    ready)
+      local items
+      items="$(gh_json project item-list "$board" --owner "$owner" --format json --limit 100)" || return 1
+      printf '%s' "$items" | "$PY" -I -c "
+import json,sys
+for it in json.load(sys.stdin).get('items',[]):
+    st=str(it.get('status') or it.get('Status') or '').strip()
+    if st.lower() in ('todo','ready','next',''):
+        c=it.get('content') or {}
+        print('#%-5s [%-12s] %s' % (c.get('number','?'), st or 'no status', c.get('title','')))
+"
+      ;;
+    status)
+      [ "$#" -ge 2 ] || die "board status <issue-number> <status-value>"
+      local n="$1" val="$2" pview fields items pid fid oid item
+      pview="$(gh_json project view "$board" --owner "$owner" --format json)" || return 1
+      pid="$(printf '%s' "$pview" | "$PY" -I -c "import json,sys;print(json.load(sys.stdin)['id'])")"
+      fields="$(gh_json project field-list "$board" --owner "$owner" --format json)" || return 1
+      read -r fid oid < <(printf '%s' "$fields" | "$PY" -I -c "
+import json,sys
+want=sys.argv[1].lower()
+for f in json.load(sys.stdin).get('fields',[]):
+    if (f.get('name') or '').lower()=='status':
+        for o in (f.get('options') or []):
+            if o['name'].lower()==want:
+                print(f['id'],o['id']); raise SystemExit
+raise SystemExit('anchor: no Status option named '+sys.argv[1])
+" "$val") || return 1
+      [ -n "${fid:-}" ] || die "board: could not resolve Status option '$val'"
+      items="$(gh_json project item-list "$board" --owner "$owner" --format json --limit 200)" || return 1
+      item="$(printf '%s' "$items" | "$PY" -I -c "
+import json,sys
+n=str(sys.argv[1])
+for it in json.load(sys.stdin).get('items',[]):
+    if str((it.get('content') or {}).get('number'))==n:
+        print(it['id']); raise SystemExit
+raise SystemExit('anchor: issue #%s is not on the board'%n)
+" "$n")" || return 1
+      gh project item-edit --id "$item" --project-id "$pid" --field-id "$fid" --single-select-option-id "$oid" >/dev/null \
+        && printf 'anchor: #%s -> %s\n' "$n" "$val" \
+        || { printf 'anchor: warning — board move for #%s failed\n' "$n" >&2; return 1; }
+      ;;
+    note)
+      [ "$#" -ge 2 ] || die "board note <issue-number> <text>"
+      local num="$1"; shift
+      gh issue comment "$num" --body "$*" >/dev/null && printf 'anchor: noted on #%s\n' "$num"
+      ;;
+    *) die "board: ready|status|note";;
+  esac
+}
+
+cmd_doctor() {
+  printf 'path      %s\n' "$ROOT"
+  printf 'state ref %s %s\n' "$REF" "$(ref_exists && echo '(exists)' || echo '(MISSING — run anchor init)')"
+  local rurl
+  if rurl="$(git remote get-url "$REMOTE" 2>/dev/null)"; then
+    printf 'state ->  %s %s\n' "$REMOTE" "$rurl"
+  else
+    printf 'state ->  %s (shared home for this thing)\n' "$REMOTE"
+  fi
+  printf 'lane      %s\n' "$(lane_name)"
+  printf 'python    %s\n' "$($PY -V 2>&1)"
+  printf 'gh        %s\n' "$(have gh && gh --version 2>/dev/null | head -1 || echo 'MISSING (board + issue features off)')"
+  printf 'board     %s owner=%s\n' "$(cfg_get board '(unset)')" "$(cfg_get owner '(unset)')"
+  if ref_exists; then
+    printf 'last write %s\n' "$(git log -1 --format='%ar  %s' "$REF")"
+  fi
+}
+
+# Where the state branch is pushed. A "thing" that spans several repos points
+# every one of them at the same home repo, so one board and one state branch
+# cover the whole thing; a single-repo thing just uses its own origin.
+resolve_remote() {
+  if [ -n "${ANCHOR_REMOTE:-}" ]; then REMOTE="$ANCHOR_REMOTE"; return 0; fi
+  local cfg; cfg="$(cfg_get state_remote)"
+  REMOTE="${cfg:-origin}"
+}
+
+pick_py
+resolve_remote
+sub="${1:-read}"; shift || true
+case "$sub" in
+  init) cmd_init "$@";;
+  read) cmd_read "$@";;
+  set) cmd_set "$@";;
+  mark) cmd_mark "$@";;
+  next) cmd_next "$@";;
+  gotcha) cmd_gotcha "$@";;
+  ask) cmd_ask "$@";;
+  resolve) cmd_resolve "$@";;
+  wrap) cmd_wrap "$@";;
+  board) cmd_board "$@";;
+  doctor) cmd_doctor "$@";;
+  -h|--help|help) sed -n '2,30p' "$0";;
+  *) die "unknown command: $sub (try: anchor help)";;
+esac

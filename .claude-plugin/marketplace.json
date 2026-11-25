@@ -49,6 +49,21 @@
         "cc-anchor",
         "agent-skills"
       ]
+    },
+    {
+      "name": "anchor",
+      "source": "./plugins/anchor",
+      "description": "Write-through session state on a git orphan branch plus a GitHub Projects queue: end and replace long conversations instead of growing them. Resumes in ~250 tokens.",
+      "category": "workflow",
+      "tags": [
+        "session-state",
+        "handoff",
+        "context",
+        "continuity",
+        "github-projects",
+        "orphan-branch",
+        "cowork"
+      ]
     }
   ]
 }
