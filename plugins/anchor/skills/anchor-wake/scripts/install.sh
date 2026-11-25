@@ -5,7 +5,7 @@ SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET="${1:?usage: install.sh /path/to/repo [--board N] [--owner O] [--state-remote URL]}"; shift || true
 [ -d "$TARGET/.git" ] || { echo "install: $TARGET is not a git repo" >&2; exit 1; }
 mkdir -p "$TARGET/.anchor/bin"
-cp "$SRC/bin/anchor" "$TARGET/.anchor/bin/anchor"
+cp "$SRC/anchor" "$TARGET/.anchor/bin/anchor"
 chmod +x "$TARGET/.anchor/bin/anchor"
 cd "$TARGET"
 ./.anchor/bin/anchor init "$@"

@@ -32,7 +32,7 @@ context. Resuming costs ~250 tokens.
 Then vendor the CLI into each repo it should track:
 
 ```bash
-./install.sh /path/to/your/repo --board 7 --owner your-gh-login
+./skills/anchor-wake/scripts/install.sh /path/to/your/repo --board 7 --owner your-gh-login
 cd /path/to/your/repo
 git add .anchor .anchor.json && git commit -m "chore: vendor anchor state tool"
 git push
@@ -78,17 +78,17 @@ the repo you are standing in. Switching projects is just `cd`.
 `.anchor.json` and the state branch lives in that repo:
 
 ```bash
-./install.sh ~/rotorcards --board 3 --owner rafe-walker
-./install.sh ~/azlandlist --board 4 --owner rafe-walker
+./skills/anchor-wake/scripts/install.sh ~/rotorcards --board 3 --owner rafe-walker
+./skills/anchor-wake/scripts/install.sh ~/azlandlist --board 4 --owner rafe-walker
 ```
 
 **One thing, many repos** — point every repo of that thing at the same board *and*
 the same state home, so one brief and one queue cover the whole thing:
 
 ```bash
-./install.sh ~/mcp-check --board 12 --owner isokron-ai \
+./skills/anchor-wake/scripts/install.sh ~/mcp-check --board 12 --owner isokron-ai \
   --state-remote https://github.com/isokron-ai/isokron-anchor
-./install.sh ~/strapi-plugin-writesafe --board 12 --owner isokron-ai \
+./skills/anchor-wake/scripts/install.sh ~/strapi-plugin-writesafe --board 12 --owner isokron-ai \
   --state-remote https://github.com/isokron-ai/isokron-anchor
 ```
 
