@@ -165,6 +165,24 @@ Nothing is lost and no one has to resolve anything by hand. The one field that i
 genuinely last-writer-wins is `inflight` — which is correct, since two sessions
 cannot both be "where the work stopped".
 
+## Board access
+
+`anchor board` shells out to `gh`, so it works wherever your `gh` has the
+`project` scope — your own machine. It does **not** work in a Claude cloud
+session, whose GitHub credential cannot make GraphQL calls, and Projects v2 is
+GraphQL-only.
+
+For board access from any session, connect GitHub's official remote MCP server
+and enable its `projects` toolset:
+
+```
+https://api.githubcopilot.com/mcp/x/projects
+```
+
+The skills prefer those tools when present and fall back to `anchor board`
+otherwise. With them connected, a filed issue can also be added to the board and
+given a Status in the same session that files it.
+
 ## Requirements
 
 `git`, `python3` (stdlib only), and `gh` for the board and issue features.
