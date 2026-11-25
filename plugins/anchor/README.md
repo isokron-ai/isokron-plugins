@@ -39,7 +39,7 @@ git push
 ```
 
 Then enable the skills for your claude.ai account (Cowork loads skills from the
-account, not from `~/.claude/skills`), and paste `templates/project-instructions.md`
+account, not from `~/.claude/skills`), and paste `skills/anchor-wake/references/project-instructions.md`
 into the Cowork project's instructions. **Do this on both Ultra accounts** — skills
 are per-account; the state branch is shared through GitHub.
 

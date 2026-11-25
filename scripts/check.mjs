@@ -54,6 +54,24 @@ if (mp) {
   }
 }
 
+// ---- hosted-only layout rules ---------------------------------------------
+// claude.ai-hosted plugins are skipped outright if they ship a top-level bin/:
+// those land on PATH on the CLI and never reach the admin approval surface.
+// `claude plugin validate` does NOT check this, so it has to live here.
+const ALLOWED_ROOT_DIRS = new Set(['.claude-plugin', 'skills', 'commands', 'agents', 'hooks']);
+function checkHostedLayout(dir, name) {
+  if (!existsSync(dir)) return;
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (!statSync(full).isDirectory()) continue;
+    if (entry === 'bin') {
+      fail(`plugins/${name}: top-level bin/ — hosted plugins are SKIPPED for this. Move executables to skills/<skill>/scripts/`);
+    } else if (!ALLOWED_ROOT_DIRS.has(entry)) {
+      warn(`plugins/${name}: non-standard top-level directory "${entry}/" — prefer skills/<skill>/scripts|references|assets`);
+    }
+  }
+}
+
 // ---- each plugin -----------------------------------------------------------
 function wordsOutsideCode(md) {
   return md.replace(/```[\s\S]*?```/g, ' ').replace(/`[^`]*`/g, ' ').split(/\s+/).filter(Boolean).length;
@@ -73,6 +91,7 @@ for (const e of entries) {
   const dir = resolve(root, e.source);
   const tag = `plugins/${e.name}`;
   if (!existsSync(dir)) { fail(`${tag}: source dir ${e.source} does not exist`); continue; }
+  checkHostedLayout(dir, e.name);
 
   const pjPath = join(dir, '.claude-plugin', 'plugin.json');
   const pj = existsSync(pjPath) ? readJson(pjPath) : (fail(`${tag}: .claude-plugin/plugin.json missing`), null);
