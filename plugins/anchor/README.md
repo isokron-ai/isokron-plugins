@@ -64,6 +64,7 @@ anchor wrap --status "In Progress"     # then open a NEW conversation
 | `anchor mark decision\|done\|blocked\|deadend\|note <text>` | append a log event |
 | `anchor next <step>...` | replace the next-steps list |
 | `anchor gotcha <text>` / `anchor ask <text>` / `anchor resolve <n>` | durable traps, open questions |
+| `anchor file "<title>" [body]` | open an issue and take it in this lane |
 | `anchor wrap [--status S]` | flush + push + issue comment + board move |
 | `anchor board ready\|status\|note` | Projects v2 helpers |
 | `anchor doctor` | prerequisites and freshness |
@@ -136,6 +137,20 @@ the merge nearly conflict-free — two sessions in different lanes touch differe
 keys, so there is nothing to resolve.
 
 With one repo and one lane, none of this shows and the output is unchanged.
+
+## Starting from nothing
+
+`anchor read` names its own state, so a cold session is not left guessing:
+
+- **`FRESH PROJECT`** — nothing recorded yet. The agent is told to ask what the
+  project is and what the first unit of work is, before doing anything.
+- **`NOTHING QUEUED FOR THIS LANE`** — oriented, but no issue here and nothing in
+  flight. The agent checks `anchor board ready`, and if that is empty too, asks
+  you what the session is about rather than inventing work.
+
+Either way the next step is `anchor file "<title>"`, which opens a GitHub issue,
+takes it in this lane and logs it — so work agreed in conversation becomes tracked
+work before any of it happens.
 
 ## Two sessions at once
 
