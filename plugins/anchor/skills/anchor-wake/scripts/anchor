@@ -46,6 +46,27 @@ cd "$ROOT"
 
 # Which repo this write came from. Matters when several repos of one "thing"
 # share a state home: the brief has to say where each entry happened.
+# This state is committed and pushed. Agent-authored text can carry a token it
+# just read; strip the obvious shapes before any of it reaches a commit.
+scrub() {
+  "$PY" -I -c "
+import re,sys
+t=sys.argv[1]
+pats=[
+ (r'(?i)\b(api[_-]?key|secret|token|password|passwd|pwd|access[_-]?key)\b\s*[:=]\s*\S+', r'\1=[redacted]'),
+ (r'(?i)\bbearer\s+[A-Za-z0-9._~+/-]{12,}=*', 'Bearer [redacted]'),
+ (r'\b(gh[pousr]_[A-Za-z0-9]{16,})', '[redacted-gh-token]'),
+ (r'\bgithub_pat_[A-Za-z0-9_]{20,}', '[redacted-gh-token]'),
+ (r'\bsk-[A-Za-z0-9]{16,}', '[redacted-key]'),
+ (r'\bglpat-[A-Za-z0-9_-]{16,}', '[redacted-key]'),
+ (r'\bAKIA[0-9A-Z]{12,}', '[redacted-aws-key]'),
+ (r'-----BEGIN [A-Z ]*PRIVATE KEY-----', '[redacted-private-key]'),
+]
+for pat,rep in pats: t=re.sub(pat,rep,t)
+sys.stdout.write(t)
+" "$1"
+}
+
 repo_name() {
   local u; u="$(git remote get-url origin 2>/dev/null || true)"
   [ -n "$u" ] || u="$ROOT"
@@ -99,6 +120,11 @@ commit_state() {
       git update-index --add --cacheinfo "100644,$blob,$path"
     done
     local tree; tree="$(git write-tree)"
+    # identical tree => nothing changed; appending here would grow the branch
+    # forever on repeated identical writes
+    if [ -n "$parent" ] && [ "$tree" = "$(git rev-parse -q --verify "$parent^{tree}" 2>/dev/null)" ]; then
+      exit 0
+    fi
     local commit
     if [ -n "$parent" ]; then
       commit="$(git commit-tree "$tree" -p "$parent" -m "$msg")"
@@ -357,7 +383,8 @@ line('issue', me.get('issue'))
 line('branch', me.get('branch'))
 line('phase', me.get('phase'))
 line('inflight', me.get('inflight'))
-line('updated', me.get('updated') or d.get('updated'))
+u=me.get('updated') or d.get('updated')
+if u: line('updated', '%s  (%s)' % (u, age(u)))
 nx=me.get('next') or []
 if nx:
     print('')
@@ -450,12 +477,12 @@ cmd_set() {
   local field="$1"; shift
   case "$field" in
     goal)
-      load_state | py_mutate "d['goal']=args[0]" "$*" | write_state "anchor: set goal";;
+      load_state | py_mutate "d['goal']=args[0]" "$(scrub "$*")" | write_state "anchor: set goal";;
     issue|branch|phase|inflight)
       load_state | py_mutate "
 ln=d['lanes'].setdefault(args[0],{})
 ln[args[1]]=args[2]
-ln['updated']=$NOW_PY" "$(lane_name)" "$field" "$*" | write_state "anchor: set $field";;
+ln['updated']=$NOW_PY" "$(lane_name)" "$field" "$(scrub "$*")" | write_state "anchor: set $field";;
     *) die "set: unknown field $field";;
   esac
   push_state
@@ -465,7 +492,7 @@ cmd_mark() {
   [ "$#" -ge 2 ] || die "mark <$LOG_KINDS> <text>"
   local kind="$1"; shift
   case " $LOG_KINDS " in *" $kind "*) ;; *) die "mark: kind must be one of: $LOG_KINDS";; esac
-  log_append "$kind" "$*"
+  log_append "$kind" "$(scrub "$*")"
   push_state
   printf 'anchor: logged %s\n' "$kind"
 }
@@ -481,13 +508,13 @@ ln['updated']=$NOW_PY" "$(lane_name)" "$@" | write_state "anchor: next steps"
 
 cmd_gotcha() {
   [ "$#" -ge 1 ] || die "gotcha <text>"
-  load_state | py_mutate "d.setdefault('gotchas',[]).append(args[0])" "$*" | write_state "anchor: gotcha"
+  load_state | py_mutate "d.setdefault('gotchas',[]).append(args[0])" "$(scrub "$*")" | write_state "anchor: gotcha"
   push_state
 }
 
 cmd_ask() {
   [ "$#" -ge 1 ] || die "ask <text>"
-  load_state | py_mutate "d.setdefault('questions',[]).append(args[0])" "$*" | write_state "anchor: question"
+  load_state | py_mutate "d.setdefault('questions',[]).append(args[0])" "$(scrub "$*")" | write_state "anchor: question"
   push_state
 }
 
@@ -596,25 +623,35 @@ cmd_board() {
     fi
     printf '%s' "$out"
   }
-  status_field() {   # echoes "<field_id> <options-json>"
+  # echoes "<status_id> <title_id> <options-json>".
+  # GET /items returns ONLY the title field unless `fields` is passed, so we
+  # must ask for Title explicitly alongside Status or titles come back empty.
+  status_field() {
     local f; f="$(api GET /fields)" || return 1
     printf '%s' "$f" | "$PY" -I -c "
 import json,sys
 d=json.load(sys.stdin)
 fs=d if isinstance(d,list) else (d.get('fields') or d.get('value') or [])
+def nm(f):
+    n=f.get('name')
+    return str(n.get('raw') if isinstance(n,dict) else n or '').lower()
+sid=tid=None; opts=[]
 for f in fs:
-    if str(f.get('name','')).lower()=='status':
-        print(f.get('id'), json.dumps(f.get('options') or []))
-        raise SystemExit
-raise SystemExit('anchor: no Status field on this board')
+    if nm(f)=='status' and sid is None:
+        sid=f.get('id'); opts=f.get('options') or []
+    elif f.get('data_type')=='title' and tid is None:
+        tid=f.get('id')
+if sid is None: raise SystemExit('anchor: no Status field on this board')
+print(sid, tid if tid is not None else '', json.dumps(opts))
 "
   }
 
   case "$sub" in
     ready)
-      local fid opts items
-      read -r fid opts < <(status_field) || return 1
-      items="$(api GET "/items?per_page=100&fields=$fid")" || return 1
+      local fid tid opts items q
+      read -r fid tid opts < <(status_field) || return 1
+      q="fields=$fid"; [ -n "$tid" ] && q="$q,$tid"
+      items="$(api GET "/items?per_page=100&$q")" || return 1
       printf '%s' "$items" | "$PY" -I -c "
 import json,sys
 d=json.load(sys.stdin)
@@ -660,17 +697,18 @@ if n==0: print('(nothing ready on the board)')
       ;;
     add)
       [ "$#" -ge 1 ] || die "board add <issue-number>"
-      local n="$1" repo iid
+      local n="$1" repo ro rn
       repo="$(git remote get-url origin 2>/dev/null | sed -E 's#.*[:/]([^/]+/[^/]+?)(\.git)?$#\1#')"
       [ -n "$repo" ] || die "board add: cannot work out the repo from origin"
-      iid="$($GHAPI "repos/$repo/issues/$n" --jq '.id' 2>/dev/null)" || die "board add: no issue #$n in $repo"
-      api POST /items "{\"type\":\"Issue\",\"id\":$iid}" >/dev/null \
+      ro="${repo%%/*}"; rn="${repo##*/}"
+      # the API resolves owner/repo/number itself — no database-id lookup
+      api POST /items "{\"type\":\"Issue\",\"owner\":\"$ro\",\"repo\":\"$rn\",\"number\":$n}" >/dev/null \
         && printf 'anchor: #%s added to board %s\n' "$n" "$board"
       ;;
     status)
       [ "$#" -ge 2 ] || die "board status <issue-number> <status-value>"
-      local n="$1" val="$2" fid opts items item oid
-      read -r fid opts < <(status_field) || return 1
+      local n="$1" val="$2" fid tid opts items item oid
+      read -r fid tid opts < <(status_field) || return 1
       oid="$(printf '%s' "$opts" | "$PY" -I -c "
 import json,sys
 want=sys.argv[1].lower()
