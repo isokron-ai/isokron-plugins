@@ -43,6 +43,29 @@ If you are about to act on (5) or (6) without (1)–(3) confirming, stop and re-
    `anchor set phase <...>`, `anchor set inflight <...>`. These write to your
    **lane** (this repo, or `ANCHOR_LANE`), not to the whole thing.
 
+### If there is nothing to resume
+
+The brief says so explicitly, and it is an instruction, not a formality.
+
+**`FRESH PROJECT`** — nothing has ever been recorded. Do not infer the project
+from the repo contents and start working. Ask the operator what this project is
+and what the first unit of work is, then `anchor set goal` and `anchor file`.
+
+**`NOTHING QUEUED FOR THIS LANE`** — oriented, but this lane has no issue and
+nothing in flight. In order:
+
+1. `anchor board ready` — the queue may have work the brief cannot see.
+2. If the board is empty too, **ask the operator what this session is about and
+   wait for the answer.** A cold session with no issue is the one case where you
+   stop and ask rather than taking the most reasonable reading.
+3. Once agreed, file it before working: `anchor file "<title>"` opens an issue and
+   takes it in this lane, or `anchor set issue "#N"` for one that exists.
+
+Never do unfiled work. Work with no issue produces a record with nothing to
+attach it to, so the next session inherits changes it cannot account for — which
+is the failure this whole system exists to prevent. Filing first costs one
+command.
+
 ### If the brief shows other lanes
 
 A thing that spans firmware, hardware and software has a lane per strand.
@@ -71,6 +94,7 @@ Append within the same turn the thing occurs:
 | Operator constraint or context worth keeping | `anchor mark note "<...>"` |
 | A durable trap discovered | `anchor gotcha "<...>"` |
 | Something only the operator can answer | `anchor ask "<...>"` |
+| New work agreed that has no issue yet | `anchor file "<title>"` — file it before starting |
 
 Also:
 - **`anchor set inflight`** whenever what you are holding changes — before a long

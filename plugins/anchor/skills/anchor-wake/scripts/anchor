@@ -13,6 +13,7 @@
 #   anchor gotcha <text>                  append a durable gotcha
 #   anchor ask <text>                     append an open question
 #   anchor resolve <n>                    drop open question n
+#   anchor file "<title>" [body]          open an issue and take it in this lane
 #   anchor wrap [--status S]              full checkpoint: push + issue comment + board
 #   anchor board ready|status|note        GitHub Projects v2 helpers
 #   anchor doctor                         check prerequisites
@@ -362,6 +363,23 @@ if nx:
     print('')
     print('NEXT (in order):')
     for i,v in enumerate(nx,1): print('  %d. %s' % (i,v))
+idle = not me.get('issue') and not me.get('inflight')
+if idle and not d.get('goal') and not lanes:
+    print('')
+    print('FRESH PROJECT — nothing has been recorded here yet.')
+    print('  Ask the operator what this project is and what the first unit of')
+    print('  work is. Do not start work before that answer.')
+    print('  Then:  anchor set goal \"<the outcome>\"')
+    print('         anchor file \"<first issue title>\"')
+elif idle:
+    print('')
+    print('NOTHING QUEUED FOR THIS LANE')
+    print('  No issue is set and nothing is in flight here.')
+    print('  1. Check the queue:  anchor board ready')
+    print('  2. If the board has nothing either, ASK THE OPERATOR what this')
+    print('     session is about. Do not start unfiled work.')
+    print('  3. Once agreed:  anchor file \"<title>\"   (opens an issue and')
+    print('     assigns it to this lane), or  anchor set issue \"#N\"')
 others=[(k,v) for k,v in sorted(lanes.items()) if k != lane]
 if others:
     print('')
@@ -481,6 +499,24 @@ qs=d.get('questions') or []
 if 0<=i<len(qs): qs.pop(i)
 d['questions']=qs" "$1" | write_state "anchor: resolved question $1"
   push_state
+}
+
+cmd_file() {
+  [ "$#" -ge 1 ] || die 'file "<title>" [body...]'
+  have gh || die "gh CLI not found — cannot open an issue"
+  local title="$1"; shift
+  local body="${*:-}"
+  [ -n "$body" ] || body="Filed from a session on the $(lane_name) lane."
+  local out n
+  out="$(gh issue create --title "$title" --body "$body" 2>&1)" || {
+    printf 'anchor: could not open the issue\n%s\n' "$out" >&2; return 1; }
+  n="$(printf '%s' "$out" | grep -o '[0-9]\+$' | tail -1)"
+  [ -n "$n" ] || { printf 'anchor: issue opened but could not read its number:\n%s\n' "$out" >&2; return 1; }
+  printf 'anchor: opened issue #%s — %s\n' "$n" "$title"
+  cmd_set issue "#$n"
+  log_append note "filed issue #$n: $title"
+  push_state
+  printf 'anchor: add it to board %s to put it in the queue\n' "$(cfg_get board '(none)')"
 }
 
 cmd_wrap() {
@@ -637,6 +673,7 @@ case "$sub" in
   gotcha) cmd_gotcha "$@";;
   ask) cmd_ask "$@";;
   resolve) cmd_resolve "$@";;
+  file) cmd_file "$@";;
   wrap) cmd_wrap "$@";;
   board) cmd_board "$@";;
   doctor) cmd_doctor "$@";;
