@@ -31,9 +31,12 @@ If you are about to act on (5) or (6) without (1)–(3) confirming, stop and re-
 4. **Ground against reality** — `git status`, `git log --oneline -5`, and the branch
    named in the brief. If `inflight` describes work the repo does not show, say so
    in one line and trust the repo.
-5. **Read the board** — `anchor board ready` for the queue, and `gh issue view <n>
-   --comments` for the issue you are taking. The newest checkpoint comment is the
-   last session's own account of itself.
+5. **Read the board.** If GitHub Projects MCP tools are available in this session
+   (the official GitHub MCP server's `projects` toolset), prefer them — they work
+   everywhere, including cloud sessions. Otherwise use `anchor board ready`, which
+   shells out to `gh` and only works where `gh` has the `project` scope. Then
+   `gh issue view <n> --comments` for the issue you are taking: the newest
+   checkpoint comment is the last session's own account of itself.
 6. **Reconcile, out loud, briefly.** One short paragraph: what is done, what is
    genuinely in flight, what you are picking up. Name any `deadend` entries that
    touch the work you are about to do — those are paths already burned.
@@ -60,6 +63,11 @@ nothing in flight. In order:
    stop and ask rather than taking the most reasonable reading.
 3. Once agreed, file it before working: `anchor file "<title>"` opens an issue and
    takes it in this lane, or `anchor set issue "#N"` for one that exists.
+4. Put it on the board. `anchor file` cannot — adding an item to a Projects v2
+   board is a GraphQL call. If the GitHub Projects MCP tools are available, use
+   them to add the issue to the board named in `.anchor.json` and set its Status.
+   If they are not, say in one line that the issue is filed but not on the board,
+   so the operator can add it.
 
 Never do unfiled work. Work with no issue produces a record with nothing to
 attach it to, so the next session inherits changes it cannot account for — which
