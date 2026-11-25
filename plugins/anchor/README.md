@@ -62,6 +62,19 @@ anchor wrap --status "In Progress"     # then open a NEW conversation
 | `anchor board ready\|status\|note` | Projects v2 helpers |
 | `anchor doctor` | prerequisites and freshness |
 
+## Two sessions at once
+
+Concurrent writers merge rather than diverge. If two sessions (two machines, two
+Claude accounts, or a cloud session and your Mac) write the state branch at the
+same time, the losing push triggers a fetch-and-replay: the NDJSON log is unioned
+and re-sorted by timestamp, `gotchas` and `questions` are unioned, and the scalar
+anchor fields take the later writer. The result is a real two-parent merge commit,
+and both sides converge on the next read.
+
+Nothing is lost and no one has to resolve anything by hand. The one field that is
+genuinely last-writer-wins is `inflight` — which is correct, since two sessions
+cannot both be "where the work stopped".
+
 ## Requirements
 
 `git`, `python3` (stdlib only), and `gh` for the board and issue features.

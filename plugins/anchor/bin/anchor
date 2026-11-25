@@ -100,13 +100,118 @@ commit_state() {
   rm -f "$idx"
 }
 
+TMPREF="refs/anchor/remote"
+
+# Merge a diverged remote tip with ours into a two-parent commit.
+# The log is append-only NDJSON so it unions cleanly; anchor.json takes our
+# scalars (last writer wins) and unions the gotcha / question lists.
+merge_state() {
+  local rtip="$1" ltip="$2"
+  local idx tmpd paths blob tree commit
+  idx="$(mktemp -t anchor-midx.XXXXXX)"; rm -f "$idx"
+  tmpd="$(mktemp -d -t anchor-merge.XXXXXX)"
+  paths="$( { git ls-tree -r --name-only "$rtip" 2>/dev/null; git ls-tree -r --name-only "$ltip" 2>/dev/null; } | grep '^log/' | sort -u )"
+  (
+    export GIT_INDEX_FILE="$idx"
+    git read-tree "$rtip"
+    git cat-file -p "$rtip:anchor.json" > "$tmpd/r.json" 2>/dev/null || printf '{}' > "$tmpd/r.json"
+    git cat-file -p "$ltip:anchor.json" > "$tmpd/l.json" 2>/dev/null || printf '{}' > "$tmpd/l.json"
+    "$PY" -I -c "
+import json,sys
+def load(p):
+    try:
+        d=json.load(open(p))
+        return d if isinstance(d,dict) else {}
+    except Exception:
+        return {}
+r,l=load(sys.argv[1]),load(sys.argv[2])
+m=dict(r)
+for k in ('goal','issue','branch','phase','inflight','updated'):
+    v=l.get(k)
+    if v: m[k]=v
+if l.get('next'): m['next']=l['next']
+for k in ('gotchas','questions'):
+    out=list(r.get(k) or [])
+    for v in (l.get(k) or []):
+        if v not in out: out.append(v)
+    m[k]=out
+json.dump(m,sys.stdout,indent=2,ensure_ascii=False)
+" "$tmpd/r.json" "$tmpd/l.json" > "$tmpd/m.json"
+    blob="$(git hash-object -w --stdin < "$tmpd/m.json")"
+    git update-index --add --cacheinfo "100644,$blob,anchor.json"
+    for pth in $paths; do
+      git cat-file -p "$rtip:$pth" > "$tmpd/r.log" 2>/dev/null || : > "$tmpd/r.log"
+      git cat-file -p "$ltip:$pth" > "$tmpd/l.log" 2>/dev/null || : > "$tmpd/l.log"
+      "$PY" -I -c "
+import json,sys
+seen=set(); out=[]
+for p in sys.argv[1:3]:
+    try: fh=open(p)
+    except Exception: continue
+    for line in fh:
+        line=line.strip()
+        if not line or line in seen: continue
+        seen.add(line); out.append(line)
+def when(l):
+    try: return json.loads(l).get('t','')
+    except Exception: return ''
+out.sort(key=when)
+sys.stdout.write('\n'.join(out)+('\n' if out else ''))
+" "$tmpd/r.log" "$tmpd/l.log" > "$tmpd/m.log"
+      blob="$(git hash-object -w --stdin < "$tmpd/m.log")"
+      git update-index --add --cacheinfo "100644,$blob,$pth"
+    done
+    tree="$(git write-tree)"
+    commit="$(git commit-tree "$tree" -p "$rtip" -p "$ltip" -m 'anchor: merge concurrent sessions')"
+    git update-ref "$REF" "$commit"
+  )
+  rm -rf "$tmpd" "$idx"
+}
+
+# Bring $REF up to date with the remote, merging if both moved.
+# Returns 0 when local is at or ahead of the remote tip.
+sync_state() {
+  git fetch -q "$REMOTE" "+$REF:$TMPREF" 2>/dev/null || return 1
+  git rev-parse -q --verify "$TMPREF" >/dev/null 2>&1 || return 0
+  local rtip ltip
+  rtip="$(git rev-parse "$TMPREF")"
+  if ! ref_exists; then git update-ref "$REF" "$rtip"; return 0; fi
+  ltip="$(git rev-parse "$REF")"
+  [ "$rtip" = "$ltip" ] && return 0
+  if git merge-base --is-ancestor "$ltip" "$rtip" 2>/dev/null; then
+    git update-ref "$REF" "$rtip"; return 0          # we were behind: fast-forward
+  fi
+  if git merge-base --is-ancestor "$rtip" "$ltip" 2>/dev/null; then
+    return 0                                          # we are ahead: nothing to merge
+  fi
+  merge_state "$rtip" "$ltip"                         # diverged: replay both
+  printf 'anchor: merged a concurrent session'"'"'s state\n' >&2
+}
+
 push_state() {
-  git push -q "$REMOTE" "$REF:$REF" 2>/dev/null \
-    || printf 'anchor: warning — push to %s failed; state is committed locally on %s\n' "$REMOTE" "$BRANCH" >&2
+  local i=0
+  while [ "$i" -lt 3 ]; do
+    if git push -q "$REMOTE" "$REF:$REF" 2>/dev/null; then
+      [ "$i" -gt 0 ] && render_state_md
+      return 0
+    fi
+    sync_state || break
+    i=$((i + 1))
+  done
+  printf 'anchor: warning — push to %s failed; state is committed locally on %s\n' "$REMOTE" "$BRANCH" >&2
+}
+
+# Recompute STATE.md from whatever anchor.json + logs are now on $REF.
+render_state_md() {
+  local md; md="$(mktemp -t anchor-md.XXXXXX)"
+  render_brief "$(load_state)" --full > "$md"
+  commit_state "anchor: refresh STATE.md" STATE.md "$md"
+  rm -f "$md"
+  git push -q "$REMOTE" "$REF:$REF" 2>/dev/null || true
 }
 
 fetch_state() {
-  git fetch -q "$REMOTE" "$REF:$REF" 2>/dev/null || true
+  sync_state || true
 }
 
 # ---------- state document ----------
