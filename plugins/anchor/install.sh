@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Vendor anchor into a repo: install.sh /path/to/repo [--board N] [--owner O]
+# Vendor anchor into a repo: install.sh /path/to/repo [--board N] [--owner O] [--state-remote URL]
 set -euo pipefail
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TARGET="${1:?usage: install.sh /path/to/repo [--board N] [--owner O]}"; shift || true
+TARGET="${1:?usage: install.sh /path/to/repo [--board N] [--owner O] [--state-remote URL]}"; shift || true
 [ -d "$TARGET/.git" ] || { echo "install: $TARGET is not a git repo" >&2; exit 1; }
 mkdir -p "$TARGET/.anchor/bin"
 cp "$SRC/bin/anchor" "$TARGET/.anchor/bin/anchor"

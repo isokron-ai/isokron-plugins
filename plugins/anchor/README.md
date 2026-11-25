@@ -62,6 +62,42 @@ anchor wrap --status "In Progress"     # then open a NEW conversation
 | `anchor board ready\|status\|note` | Projects v2 helpers |
 | `anchor doctor` | prerequisites and freshness |
 
+## Many projects, one board each
+
+Scope is per repo. `.anchor.json` sits in each repo and names that repo's board,
+so there is no global "what's next" — the queue you get is always the queue for
+the repo you are standing in. Switching projects is just `cd`.
+
+**One thing, one repo** (the common case) — the board number goes in that repo's
+`.anchor.json` and the state branch lives in that repo:
+
+```bash
+./install.sh ~/rotorcards --board 3 --owner rafe-walker
+./install.sh ~/azlandlist --board 4 --owner rafe-walker
+```
+
+**One thing, many repos** — point every repo of that thing at the same board *and*
+the same state home, so one brief and one queue cover the whole thing:
+
+```bash
+./install.sh ~/mcp-check --board 12 --owner isokron-ai \
+  --state-remote https://github.com/isokron-ai/isokron-anchor
+./install.sh ~/strapi-plugin-writesafe --board 12 --owner isokron-ai \
+  --state-remote https://github.com/isokron-ai/isokron-anchor
+```
+
+Projects v2 already collects issues from many repos onto one board, so the queue
+stays single. With a shared state home the log stamps each entry with the repo it
+came from, and `anchor read` tags them when more than one is present:
+
+```
+11-25 00:33  deadend  [strapi-plugin-writesafe] v5 codemod rewrites our guards
+11-25 00:34  note     [mcp-check] audit script now in CI
+```
+
+Without `--state-remote` each repo keeps its own state branch, which is what you
+want when the repos are unrelated.
+
 ## Two sessions at once
 
 Concurrent writers merge rather than diverge. If two sessions (two machines, two

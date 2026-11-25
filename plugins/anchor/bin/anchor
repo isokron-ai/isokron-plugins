@@ -24,7 +24,7 @@ set -euo pipefail
 
 REF="${ANCHOR_REF:-refs/heads/agent-state}"
 BRANCH="${REF#refs/heads/}"
-REMOTE="${ANCHOR_REMOTE:-origin}"
+REMOTE="origin"   # resolved properly in resolve_remote(), after config is readable
 LOG_KINDS="decision done blocked deadend note"
 
 die() { printf 'anchor: %s\n' "$*" >&2; exit 1; }
@@ -42,6 +42,15 @@ repo_root() {
 
 ROOT="$(repo_root)"
 cd "$ROOT"
+
+# Which repo this write came from. Matters when several repos of one "thing"
+# share a state home: the brief has to say where each entry happened.
+repo_name() {
+  local u; u="$(git remote get-url origin 2>/dev/null || true)"
+  [ -n "$u" ] || u="$ROOT"
+  u="${u%.git}"; u="${u%/}"
+  printf '%s' "${u##*/}"
+}
 
 cfg_get() {
   local key="$1" def="${2:-}"
@@ -237,7 +246,7 @@ json.dump(d,sys.stdout,indent=2,ensure_ascii=False)
 write_state() {           # stdin = new anchor.json content
   local msg="$1"
   local tmp; tmp="$(mktemp -t anchor-state.XXXXXX)"
-  cat > "$tmp"
+  py_mutate "d['repo']=args[0]" "$(repo_name)" > "$tmp"
   local md; md="$(mktemp -t anchor-md.XXXXXX)"
   render_brief "$(cat "$tmp")" --full > "$md"
   commit_state "$msg" anchor.json "$tmp" STATE.md "$md"
@@ -253,8 +262,8 @@ log_append() {            # log_append <kind> <text>
   "$PY" -I -c "
 import json,sys,datetime
 print(json.dumps({'t':datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-                  'kind':sys.argv[1],'text':sys.argv[2]},ensure_ascii=False))
-" "$kind" "$text" >> "$tmp"
+                  'kind':sys.argv[1],'text':sys.argv[2],'repo':sys.argv[3]},ensure_ascii=False))
+" "$kind" "$text" "$(repo_name)" >> "$tmp"
   local md; md="$(mktemp -t anchor-md.XXXXXX)"
   commit_state "anchor: $kind" "$path" "$tmp"
   render_brief "$(load_state)" --full > "$md"
@@ -271,12 +280,18 @@ recent_log() {            # recent_log <n>
   for f in $files; do git cat-file -p "$REF:$f" 2>/dev/null || true; done | tail -n "$n" \
     | "$PY" -I -c "
 import json,sys
+rows=[]
 for line in sys.stdin:
     line=line.strip()
     if not line: continue
     try: e=json.loads(line)
     except Exception: continue
-    print('  %s  %-8s %s' % (e.get('t','')[5:16].replace('T',' '), e.get('kind','?'), e.get('text','')))
+    rows.append(e)
+repos={e.get('repo') for e in rows if e.get('repo')}
+multi=len(repos)>1
+for e in rows:
+    tag=('[%s] ' % e['repo']) if (multi and e.get('repo')) else ''
+    print('  %s  %-8s %s%s' % (e.get('t','')[5:16].replace('T',' '), e.get('kind','?'), tag, e.get('text','')))
 "
 }
 
@@ -295,6 +310,7 @@ line('issue', d.get('issue'))
 line('branch', d.get('branch'))
 line('phase', d.get('phase'))
 line('inflight', d.get('inflight'))
+line('repo', d.get('repo'))
 line('updated', d.get('updated'))
 nx=d.get('next') or []
 if nx:
@@ -321,20 +337,23 @@ if q:
 # ---------- commands ----------
 
 cmd_init() {
-  local board="" owner=""
+  local board="" owner="" state_remote=""
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --board) board="$2"; shift 2;;
       --owner) owner="$2"; shift 2;;
+      --state-remote) state_remote="$2"; shift 2;;
       *) die "init: unknown arg $1";;
     esac
   done
   if [ ! -f "$ROOT/.anchor.json" ]; then
     "$PY" -I -c "
 import json,sys
-json.dump({'board':sys.argv[1],'owner':sys.argv[2],'ref':sys.argv[3]},
-          open(sys.argv[4],'w'),indent=2)
-" "$board" "$owner" "$REF" "$ROOT/.anchor.json"
+cfg={'board':sys.argv[1],'owner':sys.argv[2],'ref':sys.argv[3]}
+if sys.argv[4]: cfg['state_remote']=sys.argv[4]
+json.dump(cfg,open(sys.argv[5],'w'),indent=2)
+" "$board" "$owner" "$REF" "$state_remote" "$ROOT/.anchor.json"
+    resolve_remote
     printf 'anchor: wrote .anchor.json (commit this)\n'
   fi
   if ref_exists; then printf 'anchor: %s already exists\n' "$BRANCH"; else
@@ -506,9 +525,15 @@ raise SystemExit('anchor: issue #%s is not on the board'%n)
 }
 
 cmd_doctor() {
-  printf 'repo      %s\n' "$ROOT"
+  printf 'path      %s\n' "$ROOT"
   printf 'state ref %s %s\n' "$REF" "$(ref_exists && echo '(exists)' || echo '(MISSING — run anchor init)')"
-  printf 'remote    %s %s\n' "$REMOTE" "$(git remote get-url "$REMOTE" 2>/dev/null || echo '(none)')"
+  local rurl
+  if rurl="$(git remote get-url "$REMOTE" 2>/dev/null)"; then
+    printf 'state ->  %s %s\n' "$REMOTE" "$rurl"
+  else
+    printf 'state ->  %s (shared home for this thing)\n' "$REMOTE"
+  fi
+  printf 'repo      %s\n' "$(repo_name)"
   printf 'python    %s\n' "$($PY -V 2>&1)"
   printf 'gh        %s\n' "$(have gh && gh --version 2>/dev/null | head -1 || echo 'MISSING (board + issue features off)')"
   printf 'board     %s owner=%s\n' "$(cfg_get board '(unset)')" "$(cfg_get owner '(unset)')"
@@ -517,7 +542,17 @@ cmd_doctor() {
   fi
 }
 
+# Where the state branch is pushed. A "thing" that spans several repos points
+# every one of them at the same home repo, so one board and one state branch
+# cover the whole thing; a single-repo thing just uses its own origin.
+resolve_remote() {
+  if [ -n "${ANCHOR_REMOTE:-}" ]; then REMOTE="$ANCHOR_REMOTE"; return 0; fi
+  local cfg; cfg="$(cfg_get state_remote)"
+  REMOTE="${cfg:-origin}"
+}
+
 pick_py
+resolve_remote
 sub="${1:-read}"; shift || true
 case "$sub" in
   init) cmd_init "$@";;
