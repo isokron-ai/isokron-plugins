@@ -25,6 +25,12 @@ context. Resuming costs ~250 tokens.
 
 ## Install
 
+```
+/plugin install anchor --marketplace isokron-ai/isokron-plugins
+```
+
+Then vendor the CLI into each repo it should track:
+
 ```bash
 ./install.sh /path/to/your/repo --board 7 --owner your-gh-login
 cd /path/to/your/repo
