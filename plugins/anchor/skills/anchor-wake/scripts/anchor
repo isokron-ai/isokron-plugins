@@ -619,27 +619,41 @@ raise SystemExit('anchor: no Status field on this board')
 import json,sys
 d=json.load(sys.stdin)
 rows=d if isinstance(d,list) else (d.get('items') or d.get('value') or [])
+def flat(v):
+    # API nests display text as {'raw':..,'html':..}, sometimes under 'name'
+    if v is None: return ''
+    if isinstance(v,str): return v
+    if isinstance(v,(int,float)): return str(v)
+    if isinstance(v,dict):
+        for k in ('raw','name','title','text','login'):
+            if k in v:
+                got=flat(v[k])
+                if got: return got
+        return ''
+    if isinstance(v,list):
+        return ', '.join(x for x in (flat(i) for i in v) if x)
+    return str(v)
 def field(it,name):
     for f in (it.get('fields') or []):
-        if str(f.get('name','')).lower()==name:
-            v=f.get('value')
-            if isinstance(v,dict):
-                n=v.get('name')
-                if isinstance(n,dict): return str(n.get('raw') or '')
-                return str(n or v.get('title') or '')
-            return '' if v is None else str(v)
+        if str(flat(f.get('name'))).lower()==name:
+            return flat(f.get('value'))
     return ''
 def number(it):
     c=it.get('content') or {}
-    for k in ('number','content_number'):
-        if c.get(k) is not None: return c[k]
-        if it.get(k) is not None: return it[k]
+    for src in (c,it):
+        for k in ('number','content_number','issue_number'):
+            if isinstance(src,dict) and src.get(k) is not None: return src[k]
     return '?'
+def title(it):
+    t=field(it,'title')
+    if t: return t
+    c=it.get('content') or {}
+    return flat(c.get('title')) or '(untitled)'
 n=0
 for it in rows:
     st=field(it,'status').strip()
     if st.lower() in ('todo','ready','next',''):
-        print('#%-5s [%-12s] %s' % (number(it), st or 'no status', field(it,'title')))
+        print('#%-5s [%-12s] %s' % (number(it), st or 'no status', title(it)))
         n+=1
 if n==0: print('(nothing ready on the board)')
 "
@@ -660,11 +674,14 @@ if n==0: print('(nothing ready on the board)')
       oid="$(printf '%s' "$opts" | "$PY" -I -c "
 import json,sys
 want=sys.argv[1].lower()
-for o in json.load(sys.stdin):
+opts=json.load(sys.stdin)
+names=[]
+for o in opts:
     nm=o.get('name')
     nm=nm.get('raw') if isinstance(nm,dict) else nm
+    names.append(str(nm))
     if str(nm).lower()==want: print(o.get('id')); raise SystemExit
-raise SystemExit('anchor: no Status option named '+sys.argv[1])
+raise SystemExit('anchor: no Status option %r — board has: %s' % (sys.argv[1], ', '.join(names)))
 " "$val")" || return 1
       items="$(api GET "/items?per_page=100&fields=$fid")" || return 1
       item="$(printf '%s' "$items" | "$PY" -I -c "
@@ -695,6 +712,7 @@ raise SystemExit('anchor: issue #%s is not on the board (anchor board add %s)'%(
 }
 
 cmd_doctor() {
+  fetch_state
   printf 'path      %s\n' "$ROOT"
   printf 'state ref %s %s\n' "$REF" "$(ref_exists && echo '(exists)' || echo '(MISSING — run anchor init)')"
   local rurl
