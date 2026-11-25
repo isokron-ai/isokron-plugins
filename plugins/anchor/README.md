@@ -167,21 +167,20 @@ cannot both be "where the work stopped".
 
 ## Board access
 
-`anchor board` shells out to `gh`, so it works wherever your `gh` has the
-`project` scope — your own machine. It does **not** work in a Claude cloud
-session, whose GitHub credential cannot make GraphQL calls, and Projects v2 is
-GraphQL-only.
-
-For board access from any session, connect GitHub's official remote MCP server
-and enable its `projects` toolset:
+Board commands use the **Projects v2 REST API** (`X-GitHub-Api-Version:
+2026-03-10`), not GraphQL. That matters: GraphQL needs the `project` OAuth scope
+and is refused outright by some proxies, including the one in a Claude cloud
+session. REST needs only a token with Projects read/write on the owner.
 
 ```
-https://api.githubcopilot.com/mcp/x/projects
+anchor board ready              # the queue: Todo / Ready / Next / unset
+anchor board add <issue>        # put an issue on the board
+anchor board status <issue> "In Progress"
+anchor board raw [path]         # dump the API response, for shape debugging
 ```
 
-The skills prefer those tools when present and fall back to `anchor board`
-otherwise. With them connected, a filed issue can also be added to the board and
-given a Status in the same session that files it.
+`anchor file` calls `board add` for you, so a filed issue lands in the queue in
+the same command. No MCP connector is required.
 
 ## Requirements
 
