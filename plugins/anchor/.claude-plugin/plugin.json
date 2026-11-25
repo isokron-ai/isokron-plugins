@@ -1,0 +1,26 @@
+{
+  "name": "anchor",
+  "displayName": "Anchor",
+  "version": "1.0.0",
+  "description": "Write-through session state for long builds: the agent appends decisions, dead-ends and position to a git orphan branch as the work happens, so a fresh session resumes in ~250 tokens instead of re-reading the chat.",
+  "author": {
+    "name": "IsoKron",
+    "url": "https://isokron.ai"
+  },
+  "homepage": "https://isokron.ai",
+  "repository": "https://github.com/isokron-ai/isokron-plugins",
+  "license": "Apache-2.0",
+  "keywords": [
+    "session-state",
+    "handoff",
+    "context",
+    "continuity",
+    "github-projects",
+    "orphan-branch",
+    "cowork",
+    "local-first"
+  ],
+  "documentationUrl": "https://github.com/isokron-ai/isokron-plugins/tree/main/plugins/anchor#readme",
+  "supportUrl": "https://github.com/isokron-ai/isokron-plugins/issues",
+  "privacyPolicyUrl": "https://isokron.ai/privacy"
+}
